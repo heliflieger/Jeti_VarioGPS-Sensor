@@ -6,6 +6,23 @@
 */
 
 #define MEASURING_INTERVAL        180         //ms
+// **** General settings ****************
+
+//#define UNIT_US                             //uncomment to enable US units
+
+#define V_REF                     5000        // set supply voltage from 1800 to 5500mV
+
+// supported devices
+#define SUPPORT_BMx280                        // comment to disable devices
+#define SUPPORT_MS5611_LPS  
+#define SUPPORT_GPS
+#define SUPPORT_MAIN_DRIVE
+#define SUPPORT_RX_VOLTAGE
+#define SUPPORT_EXT_TEMP
+
+// support JetiBox Menu
+#define SUPPORT_JETIBOX_MENU
+// **************************************
 
 // EEprom parameter addresses
 enum
