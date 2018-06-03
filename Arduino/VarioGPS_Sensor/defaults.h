@@ -8,7 +8,7 @@
 
 //#define UNIT_US                             //uncomment to enable US units
 
-#define V_REF                     3300        // set supply voltage from 1800 to 5500mV
+#define V_REF                     5000        // set supply voltage from 1800 to 5500mV
 
 // supported devices
 #define SUPPORT_BMx280                        // comment to disable devices

@@ -6,11 +6,12 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.2.1"
+#define VARIOGPS_VERSION "Version V2.2.2"
 /*
 
   ******************************************************************
   Versionen:
+  V2.2.2  01.06.18  Bugfix bei fehlerhaftem #ifdef X || Y -> #if defined(X) || defined(Y) (by RS)
   V2.2.1  26.03.18  Bugfix bei float<->int casting Smoothing Factor (by RS)
   V2.2    15.02.18  Vario Tiefpass mit nur einem Smoothing Factor (by RS)
                     Jeder Sensor kann mit #define deaktiviert werden
@@ -202,7 +203,7 @@ void setup()
     }
   #endif
 
-  #ifdef SUPPORT_BMx280 || SUPPORT_MS5611_LPS
+  #if defined(SUPPORT_BMx280) || defined(SUPPORT_MS5611_LPS)
   switch (pressureSensor.type){
     case BMP280:
       pressureSensor.smoothingValue = BMx280_SMOOTHING;
@@ -353,7 +354,7 @@ void loop()
 
   if((millis() - lastTime) > MEASURING_INTERVAL){
 
-    #ifdef SUPPORT_BMx280 || SUPPORT_MS5611_LPS
+    #if defined(SUPPORT_BMx280) || defined(SUPPORT_MS5611_LPS)
     if(pressureSensor.type != unknown){
       static bool setStartAltitude = false;
       static float lastVariofilter = 0;
