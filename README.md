@@ -50,6 +50,30 @@ Für die Messung der Empfängerspannung stehen die Werte zur Verfügung:
 - Rx2 voltage
 
 Zur Messung von zB. der Motorentemperatur kann zusätzlich ein NTC-Temperaturwiederstand (-55 bis +155°C) angeschlossen werden.
+
+### RXQ - Empfangsqualität
+Für die Messung der Empfangsqualität (RXQ) muss ein Kabel vom Arduino Pin 2 mit einem 47kOhm Vorwiderstand zu einem freien Servoausgang hergestellt werden. Am Sender wird z.B. 100Hz Sendefrequenz eingestellt.
+
+Beim Empfänger muss die Servo-Output-Period auf "AUTO" eingestellt sein, damit die PWM Signaldauer nicht vom Empfänger erzeugt wird. Zudem muss beim benutzten Empfängerausgang die Fail-Safe-Einstellung auf "AUS" eingestellt sein, damit im Problemfall, das Servosignal nicht vom RX erzeugt wird.
+
+
+Der Arduino misst nun die Zeitabstände zwischen den am Servoausgang ausgegebenen Servosignale (PWM) (und zwar alle !!!), was bei 100Hz 10ms sein sollte.
+Mehr Details und Erläuterungen sind unter: http://www.so-fa.de/nh/JetiSensorRXQ zu finden.
+
+
+Für die Empfangsqualität durch Messung eines Servosignalausgangs stehen die Werte zur Verfügung:
+- SigGap : aktuelle Zeitspanne zwischen den PWM Signalen in ms (10ms bei 100Hz)
+- SigGapMax : maximale gemessene Zeitspanne zwischen den PWM Signalen (lückenlos überwacht !!!)
+- SigLossCnt : werden Abstände > 100ms dedektiert, wird der SigLossCnt um 1 erhöht (sollte immer 0 sein !)
+- #Sig/Sec : Anzahl von PWM Signalen pro Sekunde
+
+Zum Aktivieren dieses Features Code sind folgende #defines in der Datei defaults.h gedacht:
+- #define SUPPORT_RXQ : schaltet Feature im Code ein
+- #define RXQ_SIGNAL_PIN : (default: 2) definiert den zu nutzenden Arduino Eingangs-Pin
+- #define RXQ_SERVO_PIN_PULLUP : (default: "not defined") dies muss definiert sein, wenn der RX ohne Vorwiderstand angeschlossen wird
+
+Die Erfahrung der letzten 2 Jahre, ca. 15 Modellen, Abstand zum Modell bis 1500m, bei gut verlegten Antennen, zeigt, dass selbst bei Sender-Signalverlustmeldungen, die SigDuraMax immer unter 100ms bleibt, was zeigt, dass die Jeti-Signalverlustmeldung eben meist am Verlust des Rückkanals liegt!
+
   
 ## JetiBox Einstellungen
 

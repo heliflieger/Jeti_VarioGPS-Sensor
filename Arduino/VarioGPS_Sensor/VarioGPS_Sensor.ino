@@ -6,11 +6,12 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.3"
+#define VARIOGPS_VERSION "Version V2.3.4"
 /*
 
   ******************************************************************
   Versionen:
+  V2.3.4  10.02.21  RX Q value support added 
   V2.3.3  27.04.19  Fehler behoben: Azimuth und Course war vertauscht
   V2.3.2  07.03.19  Fehler bei AirSpeed Sensor behoben, Geschwindigkeit wurde nur in 3-4Kmh Schritten angezeigt
   V2.3.1  22.08.18  Fehler bei Temepraturwert behoben (Dezimalstelle wurde nicht angezeigt)
@@ -258,6 +259,83 @@ uint8_t getVoltageSensorTyp(){
   return 0;
 }
 
+#ifdef SUPPORT_RXQ
+
+#define RXQ_SERVO_SIGNAL_LOSS_GAP 100
+#include <util/atomic.h> // this library includes the ATOMIC_BLOCK macro.
+
+volatile static unsigned long  ourServoSignalPulseWidth = 0;
+volatile static unsigned long  ourServoSignalRisingEdge = 0;
+volatile static int ourServoSignalLossCount = 0;
+volatile static int ourServoSignalGapMax = 0;
+volatile static int ourServoSignalGap = 0;
+volatile unsigned long  ourPulsCnt = 0;
+static int ourServoSignalsPerSecond = 0;
+
+
+
+void sv_rising() {
+  unsigned long now_us = micros();
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    // calculate the servo signal duration (time between two PWM signals) in ms
+    // value depends on the TX signal frequency (100Hz, 50Hz, ...) and the loss of signals
+    // typical values are 10ms (for 100Hz) or 20ms (for 50Hz)
+    ourServoSignalGap = (now_us - ourServoSignalRisingEdge)/1000;
+    ourServoSignalRisingEdge = now_us;
+  }
+
+
+  // time of signal puls starting at the raising edge in ms
+  attachInterrupt(digitalPinToInterrupt(RXQ_SIGNAL_PIN), sv_falling, FALLING);
+}
+
+void sv_falling() {
+  unsigned long now_us = micros();
+  ourServoSignalPulseWidth = now_us - ourServoSignalRisingEdge;
+  ourPulsCnt++;
+  attachInterrupt(digitalPinToInterrupt(RXQ_SIGNAL_PIN), sv_rising, RISING);
+}
+
+bool checkRCServoSignal() {
+
+  // start the RC servo signal handling after 10s to 
+  // avoid wrong durations before RX is bound to TX
+  unsigned long now_ms = millis();
+  if (now_ms > 10000) {
+    static bool sv_SignalLossState = false;
+    // if there is no signal, no raising interrupt will call the interrupt routine,
+    // so check if the last rising measure is maximum, if not use the current gap
+    int sigGap = (micros() - ourServoSignalRisingEdge) / 1000;
+    ourServoSignalGap = max(sigGap, ourServoSignalGap);
+
+    if (ourServoSignalGapMax < ourServoSignalGap ) {
+      ourServoSignalGapMax = ourServoSignalGap;
+    }
+    if (ourServoSignalGap > RXQ_SERVO_SIGNAL_LOSS_GAP) {
+      if (!sv_SignalLossState) {
+        ourServoSignalLossCount++;
+      }
+      sv_SignalLossState = true;
+      return false;
+    }
+    sv_SignalLossState = false;
+  }
+
+
+  static unsigned long last;
+  int minterval = now_ms - last;
+  if (minterval > 1000) {
+    static unsigned long lastPulses = 0 ;
+    ourServoSignalsPerSecond = (ourPulsCnt - lastPulses) * 1000 / minterval;
+    lastPulses = ourPulsCnt;
+    last = now_ms;
+  }
+
+  return true;
+}
+#endif // SUPPORT_RXQ
+
+
 void setup()
 {
   // identify pressure sensor
@@ -276,6 +354,7 @@ void setup()
         pressureSensor.type = LPS_;
       } else {
       #endif
+        Wire.begin();
         Wire.beginTransmission(MS5611_ADDRESS); // if no Bosch sensor, check if return an ACK on MS5611 address
         if (Wire.endTransmission() == 0) {
           ms5611.begin(MS5611_ULTRA_HIGH_RES);
@@ -377,7 +456,6 @@ void setup()
   }
   #endif
 
-
   // Setup telemetry sensors
   if(pressureSensor.type == unknown){
     jetiEx.SetSensorActive( ID_VARIO, false, sensors );
@@ -449,10 +527,22 @@ void setup()
     jetiEx.SetSensorActive( ID_EXT_TEMP, false, sensors );
   }
 
+  #ifdef SUPPORT_RXQ
+    #ifdef RXQ_SIGNAL_PIN_PULLUP
+      pinMode(RXQ_SIGNAL_PIN, INPUT_PULLUP);
+    #endif
+    // when the signal D2 goes high, call the rising function
+    attachInterrupt(digitalPinToInterrupt(RXQ_SIGNAL_PIN), sv_rising, RISING);
+
+  #else
+    jetiEx.SetSensorActive( ID_SV_SIG_LOSS_CNT, false, sensors );
+    jetiEx.SetSensorActive( ID_SV_SIGNAL_GAP, false, sensors );
+    jetiEx.SetSensorActive( ID_SV_SIGNAL_GAP_MAX, false, sensors );
+    jetiEx.SetSensorActive( ID_SV_SIGNALS_PER_SECOND, false, sensors );
+  #endif
   // init Jeti EX Bus
   jetiEx.SetDeviceId( 0x76, 0x32 );
   
-
   #ifdef SUPPORT_EX_BUS
   jetiEx.Start( "VarioGPS", sensors, 0 );
   #else
@@ -461,13 +551,18 @@ void setup()
 
 }
 
+
 void loop()
 {
   #ifdef SUPPORT_EX_BUS
   //if(jetiEx.IsBusReleased()){
   #endif
   
-  if((millis() - lastTime) > MEASURING_INTERVAL){
+  #ifdef SUPPORT_RXQ
+    checkRCServoSignal();
+  #endif
+
+  if((millis() - lastTime) > MEASURING_INTERVAL) {
 
     #ifdef SUPPORT_MPXV7002_MPXV5004
     if(airSpeedSensor){
@@ -604,6 +699,18 @@ void loop()
     }
     #endif
 
+    #ifdef SUPPORT_RXQ
+      // ID_SV_SIG_LOSS_CNT : count of servo signal gap measures > 100ms
+      jetiEx.SetSensorValue( ID_SV_SIG_LOSS_CNT, ourServoSignalLossCount);
+      // ID_SV_SIGNAL_GAP : time gap in ms between two servo pulses
+      jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP, ourServoSignalGap);
+      // ID_SV_SIGNAL_GAP_MAX : maximum time gap in ms between two servo pulses
+      jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP_MAX, ourServoSignalGapMax);
+      // number of servo signals / transmitted signals per second
+      jetiEx.SetSensorValue( ID_SV_SIGNALS_PER_SECOND, ourServoSignalsPerSecond);
+
+    #endif
+
     lastTime = millis();
 
     // analog input
@@ -687,7 +794,6 @@ void loop()
       jetiEx.SetSensorValue( ID_EXT_TEMP, steinhart*10);
     }
     #endif
-
   }
 
   #ifdef SUPPORT_GPS
@@ -841,3 +947,8 @@ void loop()
   #endif
   
 }
+
+
+
+
+

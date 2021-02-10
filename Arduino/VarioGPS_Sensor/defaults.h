@@ -6,23 +6,6 @@
 */
 
 #define MEASURING_INTERVAL        180         //ms
-// **** General settings ****************
-
-//#define UNIT_US                             //uncomment to enable US units
-
-#define V_REF                     5000        // set supply voltage from 1800 to 5500mV
-
-// supported devices
-#define SUPPORT_BMx280                        // comment to disable devices
-#define SUPPORT_MS5611_LPS  
-#define SUPPORT_GPS
-#define SUPPORT_MAIN_DRIVE
-#define SUPPORT_RX_VOLTAGE
-#define SUPPORT_EXT_TEMP
-
-// support JetiBox Menu
-#define SUPPORT_JETIBOX_MENU
-// **************************************
 
 // EEprom parameter addresses
 enum
@@ -68,7 +51,12 @@ enum
   ID_RX1_VOLTAGE,
   ID_RX2_VOLTAGE,
   ID_EXT_TEMP,
-  ID_AIRSPEED
+  ID_AIRSPEED,
+  ID_SV_SIG_LOSS_CNT,
+  ID_SV_SIGNAL_GAP,
+  ID_SV_SIGNAL_GAP_MAX,
+  ID_SV_SIGNALS_PER_SECOND,
+  ID_LAST
 };
 
 /*
@@ -79,6 +67,10 @@ TYPE_DT   int22_t   Special data type for time and date
 TYPE_30b  int30_t   Data type 30b (-536870911 to 536870911) 
 TYPE_GPS  int30_t   Special data type for GPS coordinates:  lo/hi minute - lo/hi degree.
 */    
+
+#ifndef RXQ_SIGNAL_PIN
+#define RXQ_SIGNAL_PIN 2
+#endif
 
 // Sensor names and unit[EU]
 #ifndef UNIT_US
@@ -108,6 +100,10 @@ JETISENSOR_CONST sensors[] PROGMEM =
   { ID_RX2_VOLTAGE, "Rx2 Voltage","V",          JetiSensor::TYPE_14b, 2 },
   { ID_EXT_TEMP,    "Ext. Temp",  "\xB0\x43",   JetiSensor::TYPE_14b, 1 },
   { ID_AIRSPEED,    "Air speed",  "km/h",       JetiSensor::TYPE_14b, 0 },
+  { ID_SV_SIG_LOSS_CNT, "SigLossCnt", "#",      JetiSensor::TYPE_14b, 0 },
+  { ID_SV_SIGNAL_GAP,  "SigGap","ms",           JetiSensor::TYPE_22b, 0 },
+  { ID_SV_SIGNAL_GAP_MAX,  "SigGapMax","ms",    JetiSensor::TYPE_22b, 0 },
+  { ID_SV_SIGNALS_PER_SECOND, "#Sig/Sec","#",   JetiSensor::TYPE_14b, 0 },
   { 0 }
 };
 #endif
@@ -141,6 +137,10 @@ JETISENSOR_CONST sensors[] PROGMEM =
   { ID_RX2_VOLTAGE, "Rx2 Voltage","V",          JetiSensor::TYPE_14b, 2 },
   { ID_EXT_TEMP,    "Ext. Temp",  "\xB0\x46",   JetiSensor::TYPE_14b, 1 },
   { ID_AIRSPEED,    "Air speed",  "mph",        JetiSensor::TYPE_14b, 0 },
+  { ID_SV_SIG_LOSS_CNT, "SigLossCnt", "#",      JetiSensor::TYPE_14b, 0 },
+  { ID_SV_SIGNAL_GAP,  "SigGap","ms",           JetiSensor::TYPE_22b, 0 },
+  { ID_SV_SIGNAL_GAP_MAX,  "SigGapMax","ms",    JetiSensor::TYPE_22b, 0 },
+  { ID_SV_SIGNALS_PER_SECOND, "#Sig/s","#",     JetiSensor::TYPE_14b, 0 },
   { 0 }
 };
 #endif

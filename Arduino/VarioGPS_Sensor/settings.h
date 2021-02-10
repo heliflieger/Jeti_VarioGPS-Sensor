@@ -19,6 +19,7 @@
 #define SUPPORT_MS5611                        // MS5611 pressure sensor for altitude
 //#define SUPPORT_LPS                           // LPSxxx (from STmicroelectronics) pressure sensors for altitude 
 
+#define SUPPORT_RXQ                           // cable to a RX servo output can provide receiver (RX) qaulitiyi(Q) information 
 #define SUPPORT_GPS                           // GPS modul
 #define SUPPORT_MPXV7002_MPXV5004             // MPXV7002 or MPXV5004 pressure sensor for airspeed
 #define SUPPORT_TEC                           // Vario TEC compensation
