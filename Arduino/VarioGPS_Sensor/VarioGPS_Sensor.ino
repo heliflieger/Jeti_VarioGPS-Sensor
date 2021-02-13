@@ -6,11 +6,12 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.4"
+#define VARIOGPS_VERSION "Version V2.3.5"
 /*
 
   ******************************************************************
   Versionen:
+  V2.3.5  11.02.21  optimized MS5611 Library
   V2.3.4  10.02.21  RX Q value support added 
   V2.3.3  27.04.19  Fehler behoben: Azimuth und Course war vertauscht
   V2.3.2  07.03.19  Fehler bei AirSpeed Sensor behoben, Geschwindigkeit wurde nur in 3-4Kmh Schritten angezeigt
@@ -159,8 +160,8 @@
 #endif
 
 #ifdef SUPPORT_MS5611
-  #include <MS5611.h>
-  MS5611 ms5611;
+  #include <VarioMS5611.h>
+  VarioMS5611 ms5611;
 #endif
 
 #ifdef SUPPORT_LPS
@@ -357,7 +358,11 @@ void setup()
         Wire.begin();
         Wire.beginTransmission(MS5611_ADDRESS); // if no Bosch sensor, check if return an ACK on MS5611 address
         if (Wire.endTransmission() == 0) {
-          ms5611.begin(MS5611_ULTRA_HIGH_RES);
+          ms5611.begin();
+          // settings tested and ok, with a vario deadzone of +-10cm/s there is almost no failure tone of the vario
+          ms5611.setOversampling(MS5611_ULTRA_HIGH_RES);
+          ms5611.setVerticalSpeedSmoothingFactor(0.92);
+          ms5611.setPressureSmoothingFactor(0.92);
           pressureSensor.type = MS5611_;
         }
       #ifdef SUPPORT_LPS
@@ -607,9 +612,15 @@ void loop()
       switch (pressureSensor.type){
         #ifdef SUPPORT_MS5611
         case MS5611_:
-          uPressure = ms5611.readPressure(true); // In Pascal (100 Pa = 1 hPa = 1 mbar)
-          curAltitude = ms5611.getAltitude(uPressure, PRESSURE_SEALEVEL) * 100; // In Centimeter
-          uTemperature = ms5611.readTemperature(true); // In Celsius
+          // OLD uPressure = ms5611.readPressure(true); // In Pascal (100 Pa = 1 hPa = 1 mbar)
+          // OLD curAltitude = ms5611.getAltitude(uPressure, PRESSURE_SEALEVEL) * 100; // In Centimeter
+          // OLD uTemperature = ms5611.readTemperature(true); // In Celsius
+          // varioMS5611
+          ms5611.setVerticalSpeedSmoothingFactor(pressureSensor.smoothingValue);
+          uTemperature = ms5611.getTemperature();
+          uPressure = ms5611.getSmoothedPressure();
+          curAltitude = ms5611.calcAltitude(uPressure);
+          uVario = ms5611.getVerticalSpeed();
           break;
         #endif
         #ifdef SUPPORT_LPS
@@ -640,11 +651,13 @@ void loop()
         uRelAltitude = (curAltitude - startAltitude) / 10;
         uAbsAltitude = curAltitude / 100;
       }
-
+     
       // Vario calculation
       unsigned long dTvario = millis() - lastTime;     // delta time in ms
+      #ifndef SUPPORT_MS5611
       uVario = (curAltitude - lastAltitude) * (1000.0 / dTvario);
       lastAltitude = curAltitude;      
+      #endif
 
       // TEC (Total energie compensation)  
       // based on code from Rainer Stransky
@@ -661,6 +674,7 @@ void loop()
       }
       #endif
     
+      #ifndef SUPPORT_MS5611
       // Vario Filter
       // IIR Low Pass Filter
       // y[i] := α * x[i] + (1-α) * y[i-1]
@@ -672,6 +686,7 @@ void loop()
       // see: https://en.wikipedia.org/wiki/Low-pass_filter#Simple_infinite_impulse_response_filter
       uVario = uVario + pressureSensor.smoothingValue * (lastVariofilter - uVario);
       lastVariofilter = uVario;
+      #endif
       
       // Vario dead zone filter
       if (uVario > pressureSensor.deadzone) {
@@ -935,6 +950,12 @@ void loop()
   jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude );
   jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude );
 
+  
+  #ifdef SUPPORT_MS5611
+  ms5611.run();
+  #endif
+
+
   #ifdef SUPPORT_JETIBOX_MENU
   HandleMenu();
   #endif
@@ -947,8 +968,4 @@ void loop()
   #endif
   
 }
-
-
-
-
 

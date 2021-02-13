@@ -1,8 +1,23 @@
 # VarioGPS-Sensor
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=R69PMKTCXQBUU&source=url)
-
 Universeller Jeti Telemetrie Sensor mit vielen Möglichkeiten: Vario(TEK), GPS, Strom/Spannung/Kapazität/Leistung für Hauptantrieb, Air Speed mit Staudruckrohr, Empfängerspannung und Temperaturmessung. Der Sensor ist total einfach nachbaubar, und sollte auch von Elektronik-Anfängern problemlos zu bewerkstelligen sein. 
+
+
+
+## neue Features
+Version 2.3.5
+* Neue VarioMS5611 Library für geringeres Rauschen und deutlich besseres Signal-Rausch-Verhältnis
+    * Library : VarioMS5611 unter https://github.com/Pulsar07/VarioMS5611 verfügbar initial auch in der VarioGPS_Libraries.zip enthalten
+    * deutliche Verbesserung des Signal-Rausch-Verhältnisses und ca. um Faktor 3 verbessertes Ruherauschen
+    * ![VarioMS5611-Signalvergleich](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/VergleichVarioSignal.png)
+    * erreicht wird diese Verbesserung durch deutliche Steigerung der Oversampling-Rate von ca. 5*4096 auf 40*4096 Samples bei gleichzeitig verkleinertem/minimiertem Laufzeitimpakt durch Vermeidung von jeglichem delay() bei der Kommunikation mit dem MS5611 (kooperatives run() in der main loop()). Damit kann das Signalrauschen deutlich besser gedämpft werden ohne die Reaktionszeit zu verschlechtern.
+    * Feature wird weiterhin mittels #define SUPPORT_MS5611 aktiviert und ersetzt die bisherige MS5611 Implementierung
+
+Version 2.3.4
+* RXQ - Empfangsqualität, durch Messung von PWM Impuls eines Servoausgangs
+    * #define SUPPORT_RXQ : muss in setting.h definiert werden
+    * Es muss Arduion PIN 2 mit einem Servo-Ausgang verbunden werden. Ohne 47kOhm Widerstand muss noch eein #define RXQ_SERVO_PIN_PULLUP in setting.h definiert werden.
+    * Siehe auch : http://www.so-fa.de/nh/JetiSensorRXQ
 
 ## Telemetrie
 
@@ -55,7 +70,6 @@ Zur Messung von zB. der Motorentemperatur kann zusätzlich ein NTC-Temperaturwie
 Für die Messung der Empfangsqualität (RXQ) muss ein Kabel vom Arduino Pin 2 mit einem 47kOhm Vorwiderstand zu einem freien Servoausgang hergestellt werden. Am Sender wird z.B. 100Hz Sendefrequenz eingestellt.
 
 Beim Empfänger muss die Servo-Output-Period auf "AUTO" eingestellt sein, damit die PWM Signaldauer nicht vom Empfänger erzeugt wird. Zudem muss beim benutzten Empfängerausgang die Fail-Safe-Einstellung auf "AUS" eingestellt sein, damit im Problemfall, das Servosignal nicht vom RX erzeugt wird.
-
 
 Der Arduino misst nun die Zeitabstände zwischen den am Servoausgang ausgegebenen Servosignale (PWM) (und zwar alle !!!), was bei 100Hz 10ms sein sollte.
 Mehr Details und Erläuterungen sind unter: http://www.so-fa.de/nh/JetiSensorRXQ zu finden.
