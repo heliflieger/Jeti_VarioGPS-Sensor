@@ -361,8 +361,8 @@ void setup()
           ms5611.begin();
           // settings tested and ok, with a vario deadzone of +-10cm/s there is almost no failure tone of the vario
           ms5611.setOversampling(MS5611_ULTRA_HIGH_RES);
-          ms5611.setVerticalSpeedSmoothingFactor(0.92);
-          ms5611.setPressureSmoothingFactor(0.92);
+          ms5611.setVerticalSpeedSmoothingFactor(0.94);
+          ms5611.setPressureSmoothingFactor(0.94);
           pressureSensor.type = MS5611_;
         }
       #ifdef SUPPORT_LPS
