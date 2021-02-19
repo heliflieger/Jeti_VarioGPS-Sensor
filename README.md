@@ -5,10 +5,25 @@ Universeller Jeti Telemetrie Sensor mit vielen Möglichkeiten: Vario(TEK), GPS, 
 
 
 ## neue Features
+Version 2.3.6
+* da trotz der deutlich verbesserten MS5611 Variometer Werte in der Version V2.3.5, die Übertragung zum Sender deutlich verzögert war, ergab eine Problem-Analyse eine deutliche Überlastung der mit 9600Baud arbeitenden JetiExSensor-Schnittstelle, bei gleichzeitiger Nutzung von RXQ, GPS und Vario, da die JetiExSensor-Library alle Werte gleichwertig überträgt. Die große Anzahl an Sensor-Werten (z.B. eines GPS Moduls (im Modus Extended) ) ergab eine Variometer-Wert-Übertragung von ca. 1 Wert/s. 
+* Lösung: Priorisierbare Sensor-Wert Schnittstelle
+** Durch die Erweiterung der Bibliothek JetiExSensor (aktueller Code im Zip-File (oder unter https://github.com/Pulsar07/JetiExSensor ), um eine priorisierbare Sensor-Wert-übertragung und die Vergrößerung der Sendefrequenz, konnten mehr als 20 Telemetrie-Werte mehr oder weniger häufig, je nach Wichtigkeit, übertragen werden und gleichzeitig noch  6-10 Variometer-Werte/s, abhängig von Anzahl anderer Telemetriewerte.
+** Ein kleiner Nachteil ist, dass Werte die selten übertragen werden (z.B. Luftdruck, nur jeden 15.Frame) im Display des Jeti-Senders manchmal blinkend dargestellt werden, da die Werte nicht schnell genug (für den Sender) aktualisiert werden.
+* aufgrund des grenzwertigen Heap-Speicherverbrauchs, wurden viele Code-Bereiche nun mit bedingter Compilierung versehen, ohne jedoch die Sensor-IDs zu ändern. 
+* Vergleich zwischen den VarioGPS-Sensor V2.3.4, V2.3.5 und V2.3.6 geloggten Variowerten, jeweils zu einem parallel aktivierten JETI-REX-Assist-Vario:
+    * Vergleich mit originalem VarioGPS-Sensor V2.3.4 eines MS5611 Sensors (ohne VarioMS5611 Lib und ohne verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
+    * ![VarioGPS-SensorV2.3.4](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.4_0.88_1.1VSps.png)
+    * Vergleich mit VarioGPS-Sensor V2.3.5 eines MS5611 Sensors (mit neuer VarioMS5611 Lib aber ohne verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
+    * ![VarioGPS-SensorV2.3.5](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.5_0.96_1.3VSps.png)
+    * Vergleich mit VarioGPS-Sensor V2.3.6 eines MS5611 Sensors (mit neuer VarioMS5611 Lib und mit verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
+    * ![VarioGPS-SensorV2.3.6](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.6_0.96_6.5VSps.png)
+
+
 Version 2.3.5
 * Neue VarioMS5611 Library für geringeres Rauschen und deutlich besseres Signal-Rausch-Verhältnis
     * Library : VarioMS5611 unter https://github.com/Pulsar07/VarioMS5611 verfügbar initial auch in der VarioGPS_Libraries.zip enthalten
-    * deutliche Verbesserung des Signal-Rausch-Verhältnisses und ca. um Faktor 3 verbessertes Ruherauschen
+    * deutliche Verbesserung des Signal-Rausch-Verhältnisses und ca. um Faktor 3 verbessertes Signalrauschen
     * ![VarioMS5611-Signalvergleich](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/VergleichVarioSignal.png)
     * erreicht wird diese Verbesserung durch deutliche Steigerung der Oversampling-Rate von ca. 5*4096 auf 40*4096 Samples bei gleichzeitig verkleinertem/minimiertem Laufzeitimpakt durch Vermeidung von jeglichem delay() bei der Kommunikation mit dem MS5611 (kooperatives run() in der main loop()). Damit kann das Signalrauschen deutlich besser gedämpft werden ohne die Reaktionszeit zu verschlechtern.
     * Feature wird weiterhin mittels #define SUPPORT_MS5611 aktiviert und ersetzt die bisherige MS5611 Implementierung

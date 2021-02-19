@@ -251,10 +251,12 @@ void HandleMenu()
         // reset capacity in eeprom
         resetCapacity();
         // calibrate currentoffset
+        #ifdef SUPPORT_MAIN_DRIVE
         if(currentSensor){
           ampOffsetCalibration += cuAmp*mVperAmp[currentSensor-1];
           EEPROM.write(P_CURRENT_CALIBRATION,ampOffsetCalibration+127);
         }
+        #endif
         resetCPU();
       #ifdef SUPPORT_GPS
       case setGpsMode:

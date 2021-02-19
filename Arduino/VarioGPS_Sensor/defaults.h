@@ -56,7 +56,7 @@ enum
   ID_SV_SIGNAL_GAP,
   ID_SV_SIGNAL_GAP_MAX,
   ID_SV_SIGNALS_PER_SECOND,
-  ID_LAST
+  ID_LAST // not used, but has to be <=32 (see JetiExProtocol.h : MAX_SENSORS)
 };
 
 /*
@@ -77,33 +77,49 @@ TYPE_GPS  int30_t   Special data type for GPS coordinates:  lo/hi minute - lo/hi
 JETISENSOR_CONST sensors[] PROGMEM =
 {
   // id             name          unit          data type           precision
+  #ifdef SUPPORT_GPS
   { ID_GPSLAT,      "Latitude",   " ",          JetiSensor::TYPE_GPS, 0 },
   { ID_GPSLON,      "Longitude",  " ",          JetiSensor::TYPE_GPS, 0 },
   { ID_GPSSPEED,    "GPS speed",  "km/h",       JetiSensor::TYPE_14b, 0 },
-  { ID_ALTREL,      "Rel. Altit", "m",          JetiSensor::TYPE_22b, 1 },
-  { ID_ALTABS,      "Abs. Altit", "m",          JetiSensor::TYPE_22b, 0 },
-  { ID_VARIO,       "Vario",      "m/s",        JetiSensor::TYPE_22b, 2 },
   { ID_DIST,        "Distance",   "m",          JetiSensor::TYPE_22b, 0 },
+  #ifdef SUPPORT_GPS_EXTENDED
   { ID_TRIP,        "Trip",       "km",         JetiSensor::TYPE_22b, 2 },
   { ID_AZIMUTH,     "Azimuth",    "\xB0",       JetiSensor::TYPE_14b, 0 },
   { ID_COURSE,      "Course",     "\xB0",       JetiSensor::TYPE_14b, 0 },
   { ID_SATS,        "Satellites", " ",          JetiSensor::TYPE_6b,  0 },
   { ID_HDOP,        "HDOP",       " ",          JetiSensor::TYPE_14b, 2 },
+  #endif
+  #endif
+  { ID_ALTREL,      "Rel. Altit", "m",          JetiSensor::TYPE_22b, 1 },
+  { ID_ALTABS,      "Abs. Altit", "m",          JetiSensor::TYPE_22b, 0 },
+  { ID_VARIO,       "Variometer", "m/s",        JetiSensor::TYPE_22b, 2 },
   { ID_PRESSURE,    "Air press.", "hPa",        JetiSensor::TYPE_22b, 2 },
   { ID_TEMPERATURE, "Temp.",      "\xB0\x43",   JetiSensor::TYPE_14b, 1 },
+  #ifdef SUPPORT_BMx280
   { ID_HUMIDITY,    "Humidity",   "%rH",        JetiSensor::TYPE_14b, 1 },
+  #endif
+  #ifdef SUPPORT_MAIN_DRIVE
   { ID_VOLTAGE,     "Voltage",    "V",          JetiSensor::TYPE_14b, 1 },
   { ID_CURRENT,     "Current",    "A",          JetiSensor::TYPE_14b, 1 },
   { ID_CAPACITY,    "Capacity",   "mAh",        JetiSensor::TYPE_22b, 0 },
-  { ID_POWER,       "Power",      "W",          JetiSensor::TYPE_22b, 0 },
+  { ID_POWER,       "Power",      "W",          JetiSensor::TYPE_22b, 0 }, 
+  #endif
+  #ifdef SUPPORT_RX_VOLTAGE
   { ID_RX1_VOLTAGE, "Rx1 Voltage","V",          JetiSensor::TYPE_14b, 2 },
   { ID_RX2_VOLTAGE, "Rx2 Voltage","V",          JetiSensor::TYPE_14b, 2 },
+  #endif
+  #ifdef SUPPORT_EXT_TEMP
   { ID_EXT_TEMP,    "Ext. Temp",  "\xB0\x43",   JetiSensor::TYPE_14b, 1 },
+  #endif
+  #ifdef SUPPORT_MPXV7002_MPXV5004
   { ID_AIRSPEED,    "Air speed",  "km/h",       JetiSensor::TYPE_14b, 0 },
+  #endif
+#ifdef SUPPORT_RXQ
   { ID_SV_SIG_LOSS_CNT, "SigLossCnt", "#",      JetiSensor::TYPE_14b, 0 },
   { ID_SV_SIGNAL_GAP,  "SigGap","ms",           JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNAL_GAP_MAX,  "SigGapMax","ms",    JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNALS_PER_SECOND, "#Sig/Sec","#",   JetiSensor::TYPE_14b, 0 },
+#endif
   { 0 }
 };
 #endif
@@ -114,29 +130,43 @@ JETISENSOR_CONST sensors[] PROGMEM =
 JETISENSOR_CONST sensors[] PROGMEM =
 {
   // id             name          unit          data type           precision
+  #ifdef SUPPORT_GPS
   { ID_GPSLAT,      "Latitude",   " ",          JetiSensor::TYPE_GPS, 0 },
   { ID_GPSLON,      "Longitude",  " ",          JetiSensor::TYPE_GPS, 0 },
   { ID_GPSSPEED,    "GPS speed",  "mph",        JetiSensor::TYPE_14b, 0 },
-  { ID_ALTREL,      "Rel. Altit", "ft",         JetiSensor::TYPE_22b, 1 },
-  { ID_ALTABS,      "Abs. Altit", "ft",         JetiSensor::TYPE_22b, 0 },
-  { ID_VARIO,       "Vario",      "ft/s",       JetiSensor::TYPE_22b, 2 }, 
   { ID_DIST,        "Distance",   "ft.",        JetiSensor::TYPE_22b, 0 },
+  #ifdef SUPPORT_GPS_EXTENDED
   { ID_TRIP,        "Trip",       "mi",         JetiSensor::TYPE_22b, 2 },
   { ID_AZIMUTH,     "Azimuth",    "\xB0",       JetiSensor::TYPE_14b, 0 },
   { ID_COURSE,      "Course",     "\xB0",       JetiSensor::TYPE_14b, 0 },
   { ID_SATS,        "Satellites", " ",          JetiSensor::TYPE_6b,  0 },
   { ID_HDOP,        "HDOP",       " ",          JetiSensor::TYPE_14b, 2 },
+  #endif
+  #endif
+  { ID_ALTREL,      "Rel. Altit", "ft",         JetiSensor::TYPE_22b, 1 },
+  { ID_ALTABS,      "Abs. Altit", "ft",         JetiSensor::TYPE_22b, 0 },
+  { ID_VARIO,       "Variometer", "ft/s",       JetiSensor::TYPE_22b, 2 }, 
   { ID_PRESSURE,    "Air press.", "inHG",       JetiSensor::TYPE_22b, 2 },
   { ID_TEMPERATURE, "Temp.",      "\xB0\x46",   JetiSensor::TYPE_14b, 1 },
+  #ifdef SUPPORT_BMx280
   { ID_HUMIDITY,    "Humidity",   "%rH",        JetiSensor::TYPE_14b, 1 },
+  #endif
+  #ifdef SUPPORT_MAIN_DRIVE
   { ID_VOLTAGE,     "Voltage",    "V",          JetiSensor::TYPE_14b, 1 },
   { ID_CURRENT,     "Current",    "A",          JetiSensor::TYPE_14b, 1 },
   { ID_CAPACITY,    "Capacity",   "mAh",        JetiSensor::TYPE_22b, 0 },
   { ID_POWER,       "Power",      "W",          JetiSensor::TYPE_22b, 0 },
+  #endif
+  #ifdef SUPPORT_RX_VOLTAGE
   { ID_RX1_VOLTAGE, "Rx1 Voltage","V",          JetiSensor::TYPE_14b, 2 },
   { ID_RX2_VOLTAGE, "Rx2 Voltage","V",          JetiSensor::TYPE_14b, 2 },
+  #endif
+  #ifdef SUPPORT_EXT_TEMP
   { ID_EXT_TEMP,    "Ext. Temp",  "\xB0\x46",   JetiSensor::TYPE_14b, 1 },
+  #endif
+  #ifdef SUPPORT_MPXV7002_MPXV5004
   { ID_AIRSPEED,    "Air speed",  "mph",        JetiSensor::TYPE_14b, 0 },
+  #endif
   { ID_SV_SIG_LOSS_CNT, "SigLossCnt", "#",      JetiSensor::TYPE_14b, 0 },
   { ID_SV_SIGNAL_GAP,  "SigGap","ms",           JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNAL_GAP_MAX,  "SigGapMax","ms",    JetiSensor::TYPE_22b, 0 },
@@ -237,12 +267,18 @@ enum {
   Rx1_voltage,
   Rx2_voltage
 };
+ 
 
-
+#ifdef ANALOG_R_DIVIDER_20_20
+// max. voltage @5.0V vref             13.6V           51.8V           51.8V           33.4V           36.3V           62.7V           10.0V           10.0V
+const uint16_t voltageInputR1[] = {   14700,          14700,          14700,          13700,          10000,          18000,          20000,          20000,  };   //Resistor R1 in Ohms
+const uint16_t voltageInputR2[] = {    4700,           1000,           1000,           1500,           1000,           1000,          20000,          20000,  };   //Resistor R2 in Ohms
+#else
 //                                  AttoPilot_45    AttoPilot_90    AttoPilot_180     APM25           ACS712          ACS758        Rx1 Voltage     Rx2 Voltage
 // max. voltage @3.3V vref             13.6V           51.8V           51.8V           33.4V           36.3V           62.7V            9.9V            9.9V
 const uint16_t voltageInputR1[] = {   14700,          14700,          14700,          13700,          10000,          18000,          20000,          20000,  };   //Resistor R1 in Ohms
 const uint16_t voltageInputR2[] = {    4700,           1000,           1000,           1500,           1000,           1000,          10000,          10000,  };   //Resistor R2 in Ohms
+#endif
 
 /*
                   voltage input
