@@ -6,11 +6,12 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.6"
+#define VARIOGPS_VERSION "Version V2.3.6.1"
 /*
 
   ******************************************************************
   Versionen:
+  V2.3.6.1 23.02.21 bug with wrong height values for VarioMS5611 fixed
   V2.3.6  19.02.21  priorized telemetry values introduced, now variometer value is  transmitted about 10 times/s
                     to reduce the memory footprint, a lot of the sensor values and code fragments are now in #define sections
   V2.3.5  11.02.21  optimized MS5611 Library
@@ -637,7 +638,10 @@ void loop()
           ms5611.setVerticalSpeedSmoothingFactor(pressureSensor.smoothingValue);
           uTemperature = ms5611.getTemperature();
           uPressure = ms5611.getSmoothedPressure();
-          curAltitude = ms5611.calcAltitude(uPressure);
+          if(gpsSettings.mode == GPS_disabled){
+            uAbsAltitude = ms5611.calcAltitude(uPressure);
+          }
+          uRelAltitude = ms5611.calcRelAltitude(uPressure)* 10; // we want rel. altitude in decimeter;
           uVario = ms5611.getVerticalSpeed();
           break;
         #endif
@@ -660,6 +664,7 @@ void loop()
         #endif
       }
 
+      #ifndef SUPPORT_MS5611
       if (startAltitude == 0) {
         // Set start-altitude in sensor-start
         startAltitude = curAltitude;
@@ -669,6 +674,7 @@ void loop()
         uRelAltitude = (curAltitude - startAltitude) / 10;
         uAbsAltitude = curAltitude / 100;
       }
+      #endif
      
       // Vario calculation
       unsigned long dTvario = millis() - lastTime;     // delta time in ms
