@@ -477,7 +477,7 @@ void setup()
   }
   if(pressureSensor.type == MS5611_){
     // to speedup the fine grained vario values set the buffer send cycle to a minimum value
-    jetiEx.SetJetiSendCycle(75);
+    jetiEx.SetJetiSendCycle(JETI_SEND_CYCLE);
   }
 
   #ifdef SUPPORT_BMx280
