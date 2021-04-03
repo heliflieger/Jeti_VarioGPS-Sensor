@@ -6,7 +6,7 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.6.2"
+#define VARIOGPS_VERSION "Version V2.3.6.3"
 /*
 
   ******************************************************************
