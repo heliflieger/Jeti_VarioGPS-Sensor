@@ -8,9 +8,9 @@ Universeller Jeti Telemetrie Sensor mit vielen Möglichkeiten: Vario(TEK), GPS, 
 Version 2.3.6
 * da trotz der deutlich verbesserten MS5611 Variometer Werte in der Version V2.3.5, die Übertragung zum Sender deutlich verzögert war, ergab eine Problem-Analyse eine deutliche Überlastung der mit 9600Baud arbeitenden JetiExSensor-Schnittstelle, bei gleichzeitiger Nutzung von RXQ, GPS und Vario, da die JetiExSensor-Library alle Werte gleichwertig überträgt. Die große Anzahl an Sensor-Werten (z.B. eines GPS Moduls (im Modus Extended) ) ergab eine Variometer-Wert-Übertragung von ca. 1 Wert/s. 
 * Lösung: Priorisierbare Sensor-Wert Schnittstelle
-** Durch die Erweiterung der Bibliothek JetiExSensor (aktueller Code im Zip-File (oder unter https://github.com/Pulsar07/JetiExSensor ), um eine priorisierbare Sensor-Wert-übertragung und die Vergrößerung der Sendefrequenz, konnten mehr als 20 Telemetrie-Werte mehr oder weniger häufig, je nach Wichtigkeit, übertragen werden und gleichzeitig noch  6-10 Variometer-Werte/s, abhängig von Anzahl anderer Telemetriewerte.
-** Ein kleiner Nachteil ist, dass Werte die selten übertragen werden (z.B. Luftdruck, nur jeden 15.Frame) im Display des Jeti-Senders manchmal blinkend dargestellt werden, da die Werte nicht schnell genug (für den Sender) aktualisiert werden.
-* aufgrund des grenzwertigen Heap-Speicherverbrauchs, wurden viele Code-Bereiche nun mit bedingter Compilierung versehen, ohne jedoch die Sensor-IDs zu ändern. 
+  * Durch die Erweiterung der Bibliothek JetiExSensor (aktueller Code im Zip-File (oder unter https://github.com/Pulsar07/JetiExSensor ), um eine priorisierbare Sensor-Wert-übertragung und die Vergrößerung der Sendefrequenz, konnten mehr als 20 Telemetrie-Werte mehr oder weniger häufig, je nach Wichtigkeit, übertragen werden und gleichzeitig noch  6-10 Variometer-Werte/s, abhängig von Anzahl anderer Telemetriewerte.
+  * Ein kleiner Nachteil ist, dass Werte die selten übertragen werden (z.B. Luftdruck, nur jeden 15.Frame) im Display des Jeti-Senders manchmal blinkend dargestellt werden, da die Werte nicht schnell genug (für den Sender) aktualisiert werden. Im Code ist es jedoch sehr leich die Priorität eines Sensor-Wertes nach den eigenen Bedürfnissen anzupassen.
+* aufgrund des grenzwertigen Heap-Speicherverbrauchs, wurden viele Code-Bereiche nun mit bedingter Compilierung versehen, ohne jedoch die Sensor-IDs zu ändern. D.h. egal welche #defines gesetzt werden, die IDs und damit die Interpretation auf dem Sender wird dabei nicht geändert.
 * Vergleich zwischen den VarioGPS-Sensor V2.3.4, V2.3.5 und V2.3.6 geloggten Variowerten, jeweils zu einem parallel aktivierten JETI-REX-Assist-Vario:
     * Vergleich mit originalem VarioGPS-Sensor V2.3.4 eines MS5611 Sensors (ohne VarioMS5611 Lib und ohne verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
     * ![VarioGPS-SensorV2.3.4](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.4_0.88_1.1VSps.png)
@@ -25,13 +25,14 @@ Version 2.3.5
     * Library : VarioMS5611 unter https://github.com/Pulsar07/VarioMS5611 verfügbar initial auch in der VarioGPS_Libraries.zip enthalten
     * deutliche Verbesserung des Signal-Rausch-Verhältnisses und ca. um Faktor 3 verbessertes Signalrauschen
     * ![VarioMS5611-Signalvergleich](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/VergleichVarioSignal.png)
-    * erreicht wird diese Verbesserung durch deutliche Steigerung der Oversampling-Rate von ca. 5*4096 auf 40*4096 Samples bei gleichzeitig verkleinertem/minimiertem Laufzeitimpakt durch Vermeidung von jeglichem delay() bei der Kommunikation mit dem MS5611 (kooperatives run() in der main loop()). Damit kann das Signalrauschen deutlich besser gedämpft werden ohne die Reaktionszeit zu verschlechtern.
-    * Feature wird weiterhin mittels #define SUPPORT_MS5611 aktiviert und ersetzt die bisherige MS5611 Implementierung
+    * erreicht wird diese Verbesserung durch deutliche Steigerung der Oversampling-Rate von ca. 5 x 4096 auf 40 x 4096 Samples bei gleichzeitig verkleinertem/minimiertem Laufzeitimpakt durch Vermeidung von jeglichem delay() bei der Kommunikation mit dem MS5611 (kooperatives run() in der main loop()). Damit kann das Signalrauschen deutlich besser gedämpft werden ohne die Reaktionszeit und die Empfindlichkeit zu verschlechtern.
+    * weitere Verbesserungen sind mit noch besserer HW / Software kaum noch zu erwarten, da das barometrische Hintergrundrauschen im Bereich von 1Pa bei 0,2Hz liegt (https://de.wikipedia.org/wiki/Luftdruck#Hintergrundrauschen), was ca. 10cm Rauschen innerhalb von 5 Sekunden entspricht.
+    * Das Feature wird weiterhin mittels #define SUPPORT_MS5611 aktiviert und ersetzt die bisherige MS5611 Implementierung
 
 Version 2.3.4
 * RXQ - Empfangsqualität, durch Messung von PWM Impuls eines Servoausgangs
     * #define SUPPORT_RXQ : muss in setting.h definiert werden
-    * Es muss Arduion PIN 2 mit einem Servo-Ausgang verbunden werden. Ohne 47kOhm Widerstand muss noch eein #define RXQ_SERVO_PIN_PULLUP in setting.h definiert werden.
+    * Es muss Arduino PIN 2 mit einem Servo-Ausgang verbunden werden. Ohne 47kOhm Widerstand muss noch eein #define RXQ_SIGNAL_PIN_PULLUP in setting.h definiert werden.
     * Siehe auch : http://www.so-fa.de/nh/JetiSensorRXQ
 
 ## Telemetrie
@@ -99,7 +100,7 @@ Für die Empfangsqualität durch Messung eines Servosignalausgangs stehen die We
 Zum Aktivieren dieses Features Code sind folgende #defines in der Datei defaults.h gedacht:
 - #define SUPPORT_RXQ : schaltet Feature im Code ein
 - #define RXQ_SIGNAL_PIN : (default: 2) definiert den zu nutzenden Arduino Eingangs-Pin
-- #define RXQ_SERVO_PIN_PULLUP : (default: "not defined") dies muss definiert sein, wenn der RX ohne Vorwiderstand angeschlossen wird
+- #define RXQ_SIGNAL_PIN_PULLUP : (default: "not defined") dies muss definiert sein, wenn der RX ohne Vorwiderstand angeschlossen wird
 
 Die Erfahrung der letzten 2 Jahre, ca. 15 Modellen, Abstand zum Modell bis 1500m, bei gut verlegten Antennen, zeigt, dass selbst bei Sender-Signalverlustmeldungen, die SigDuraMax immer unter 100ms bleibt, was zeigt, dass die Jeti-Signalverlustmeldung eben meist am Verlust des Rückkanals liegt!
 
