@@ -237,7 +237,9 @@ enum {
 
 // **** GPS settings ****
 
+#ifndef GPSBaud
 #define GPSBaud 9600
+#endif
 
 // GPS mode
 enum {

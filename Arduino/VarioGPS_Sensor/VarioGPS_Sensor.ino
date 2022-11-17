@@ -6,11 +6,13 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.6.3"
+#define VARIOGPS_VERSION "Version V2.3.6.4"
 /*
 
   ******************************************************************
   Versionen:
+  V2.3.6.4 16.11.22 dynamic GPS speed and vario value transmission (V>30m/S GPS Speed prio is increased, vario values are decreased 
+                    on the Jeti Telemetry Interface
   V2.3.6.3 03.04.21 bugfix do the ms5611.run() only if MS5611 is detected
   V2.3.6.2 01.03.21 bugfix JetiExSensor ExBuf overrun fixed (lib added) and usage of new prio-defines
   V2.3.6.1 23.02.21 bug with wrong height values for VarioMS5611 fixed
@@ -855,9 +857,14 @@ void loop()
     // if GPS-Fix
     if (gps.location.isValid() && gps.location.age() < 2000) { 
 
+      
+      ms5611_osr_t locationPrio = JEP_PRIO_LOW;
+      #ifdef GPS_LOCATION_PRIO_HIGH
+      ms5611_osr_t locationPrio = JEP_PRIO_HIGH;
+      #endif
       // Position
-      jetiEx.SetSensorValueGPS( ID_GPSLAT, false, gps.location.lat(), JEP_PRIO_LOW );
-      jetiEx.SetSensorValueGPS( ID_GPSLON, true, gps.location.lng(), JEP_PRIO_LOW );
+      jetiEx.SetSensorValueGPS( ID_GPSLAT, false, gps.location.lat(), locationPrio );
+      jetiEx.SetSensorValueGPS( ID_GPSLON, true, gps.location.lng(), locationPrio );
 
       // Altitude
       uAbsAltitude = gps.altitude.meters();
@@ -878,10 +885,17 @@ void loop()
       #endif
 
       // Speed
+      // dynamic Jeti transfer rate: at high speed higher prio
+      ms5611_osr_t prio = JEP_PRIO_LOW;
+      double speed = gps.speed.mps();
+      if (speed > 30.0 ) {
+         prio = JEP_PRIO_HIGH;
+      }
+      
       #ifdef UNIT_US
-        jetiEx.SetSensorValue( ID_GPSSPEED, gps.speed.mph(), JEP_PRIO_LOW);
+        jetiEx.SetSensorValue( ID_GPSSPEED, gps.speed.mph(), prio);
       #else
-        jetiEx.SetSensorValue( ID_GPSSPEED, gps.speed.kmph(), JEP_PRIO_LOW);
+        jetiEx.SetSensorValue( ID_GPSSPEED, gps.speed.kmph(), prio);
       #endif
 
       #ifdef SUPPORT_GPS_EXTENDED
@@ -985,8 +999,10 @@ void loop()
   }
   #endif
 
+  #ifndef NO_ALTITUDE_VALUES
   jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude, JEP_PRIO_STANDARD);
   jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude, JEP_PRIO_ULTRA_LOW);
+  #endif
   
   #ifdef SUPPORT_MS5611
   if (pressureSensor.type == MS5611_) {
@@ -1018,14 +1034,22 @@ void loop()
 void setFastVariometerValues() {
   if (pressureSensor.type == MS5611_) {
     int variometer = ms5611.getVerticalSpeed();
+    ms5611_osr_t prio = JEP_PRIO_ULTRA_HIGH;
+      #ifdef SUPPORT_GPS
+      // dynamic Jeti transfer rate: at high speed higher prio
+      double speed = gps.speed.mps();
+      if (speed > 30.0 ) {
+         prio = JEP_PRIO_STANDARD;
+      }
+      #endif
     #ifdef UNIT_US
       // EU to US conversions
       // ft/s = m/s / 0.3048
       // inHG = hPa * 0,029529983071445
       // ft = m / 0.3048
-      jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048, JEP_PRIO_ULTRA_HIGH); // ft/s
+      jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048, prio); // ft/s
     #else
-      jetiEx.SetSensorValue( ID_VARIO, variometer, JEP_PRIO_ULTRA_HIGH);
+      jetiEx.SetSensorValue( ID_VARIO, variometer, prio);
     #endif
   }
 }

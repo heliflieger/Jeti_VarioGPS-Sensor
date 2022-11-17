@@ -12,6 +12,9 @@
                                               // low values force lower latency
                                               // low values my force progems with the hardware JETIBOX. JETIBOX emulation in TX has no problems
 
+// #define GPSBaud 9600                         // here a different interface speed to the GPS module can be specified up to 31250baud
+// #define NO_ALTITUDE_VALUES                   // define this to disable altitude transmission to the Jeti telemetry interface
+// #define GPS_LOCATION_PRIO_HIGH               // define this to increase the GPS location values prio at  the Jeti telemetry interface
 
 // **** supported devices, comment to disable ****
 // Turn on the compiler warnings in the arduino settings to indicate compatibility issues
