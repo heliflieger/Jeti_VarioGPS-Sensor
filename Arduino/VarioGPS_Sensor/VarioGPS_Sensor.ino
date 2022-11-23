@@ -13,6 +13,7 @@
   Versionen:
   V2.3.6.4 16.11.22 dynamic GPS speed and vario value transmission (V>30m/S GPS Speed prio is increased, vario values are decreased 
                     on the Jeti Telemetry Interface
+                    more option in settings.h for GPS values
   V2.3.6.3 03.04.21 bugfix do the ms5611.run() only if MS5611 is detected
   V2.3.6.2 01.03.21 bugfix JetiExSensor ExBuf overrun fixed (lib added) and usage of new prio-defines
   V2.3.6.1 23.02.21 bug with wrong height values for VarioMS5611 fixed
@@ -858,9 +859,9 @@ void loop()
     if (gps.location.isValid() && gps.location.age() < 2000) { 
 
       
-      ms5611_osr_t locationPrio = JEP_PRIO_LOW;
+      uint8_t locationPrio = JEP_PRIO_LOW;
       #ifdef GPS_LOCATION_PRIO_HIGH
-      ms5611_osr_t locationPrio = JEP_PRIO_HIGH;
+      uint8_t locationPrio = JEP_PRIO_HIGH;
       #endif
       // Position
       jetiEx.SetSensorValueGPS( ID_GPSLAT, false, gps.location.lat(), locationPrio );
@@ -886,7 +887,7 @@ void loop()
 
       // Speed
       // dynamic Jeti transfer rate: at high speed higher prio
-      ms5611_osr_t prio = JEP_PRIO_LOW;
+      uint8_t prio = JEP_PRIO_LOW;
       double speed = gps.speed.mps();
       if (speed > 30.0 ) {
          prio = JEP_PRIO_HIGH;
