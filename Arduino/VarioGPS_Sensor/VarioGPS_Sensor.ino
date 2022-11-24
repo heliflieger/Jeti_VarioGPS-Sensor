@@ -6,11 +6,13 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.6.4"
+#define VARIOGPS_VERSION "Version V2.3.6.6"
 /*
 
   ******************************************************************
   Versionen:
+  V2.3.6.6 24.11.22 fix compile error with GPS_LOCATION_PRIO_HIGH
+  V2.3.6.5 23.11.22 fix to allow usage GPS device only
   V2.3.6.4 16.11.22 dynamic GPS speed and vario value transmission (V>30m/S GPS Speed prio is increased, vario values are decreased 
                     on the Jeti Telemetry Interface
                     more option in settings.h for GPS values
@@ -861,7 +863,7 @@ void loop()
       
       uint8_t locationPrio = JEP_PRIO_LOW;
       #ifdef GPS_LOCATION_PRIO_HIGH
-      uint8_t locationPrio = JEP_PRIO_HIGH;
+      locationPrio = JEP_PRIO_HIGH;
       #endif
       // Position
       jetiEx.SetSensorValueGPS( ID_GPSLAT, false, gps.location.lat(), locationPrio );
