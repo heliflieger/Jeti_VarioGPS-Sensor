@@ -33,6 +33,9 @@ enum screenViews {
   #ifdef SUPPORT_EXT_TEMP
   enableExternTemp,
   #endif
+  #ifdef SUPPORT_LSM303
+  enableCompass,
+  #endif
   saveSettings,
   defaultSettings
 };
@@ -65,6 +68,9 @@ const char menuText[][17] PROGMEM=
   #endif
   #ifdef SUPPORT_EXT_TEMP
   {"Ext. Temp:"},
+  #endif
+  #ifdef SUPPORT_LSM303
+  {"Compass"},
   #endif
   {"Save and restart"},
   {"Load defaults"}
@@ -317,6 +323,11 @@ void HandleMenu()
         enableExtTemp = !enableExtTemp;
         break;
       #endif
+      #ifdef SUPPORT_LSM303
+      case enableCompass:
+        compassEnabled = !compassEnabled;
+        break;
+      #endif
       case saveSettings:
         #ifdef SUPPORT_GPS
         EEPROM.write(P_GPS_MODE, gpsSettings.mode);
@@ -335,6 +346,10 @@ void HandleMenu()
 
         #ifdef SUPPORT_EXT_TEMP
         EEPROM.write(P_ENABLE_TEMP, enableExtTemp);
+        #endif
+
+        #ifdef SUPPORT_LSM303
+        EEPROM.write(P_ENABLE_COMPASS, compassEnabled);
         #endif
 
         EEPROM.write(P_VARIO_SMOOTHING,int(pressureSensor.smoothingValue*100));
@@ -424,6 +439,11 @@ void HandleMenu()
     #ifdef SUPPORT_EXT_TEMP
     case enableExternTemp:
       memcpy_P( _bufferLine2, &enableText[enableExtTemp], 16 );
+      break;
+    #endif
+    #ifdef SUPPORT_LSM303
+    case enableCompass:
+      memcpy_P( _bufferLine2, &enableText[compassEnabled], 16 );
       break;
     #endif
   }

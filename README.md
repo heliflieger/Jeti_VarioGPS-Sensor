@@ -5,6 +5,9 @@ Universeller Jeti Telemetrie Sensor mit vielen Möglichkeiten: Vario(TEK), GPS, 
 
 
 ## neue Features
+Version 2.4
+* Unterstützung eines GY-511 (LSM303) Kompass-Modules. Angezeigt wird dr absolute und der relative Wert, seit dem Start.
+
 Version 2.3.6
 * da trotz der deutlich verbesserten MS5611 Variometer Werte in der Version V2.3.5, die Übertragung zum Sender deutlich verzögert war, ergab eine Problem-Analyse eine deutliche Überlastung der mit 9600Baud arbeitenden JetiExSensor-Schnittstelle, bei gleichzeitiger Nutzung von RXQ, GPS und Vario, da die JetiExSensor-Library alle Werte gleichwertig überträgt. Die große Anzahl an Sensor-Werten (z.B. eines GPS Moduls (im Modus Extended) ) ergab eine Variometer-Wert-Übertragung von ca. 1 Wert/s. 
 * Lösung: Priorisierbare Sensor-Wert Schnittstelle

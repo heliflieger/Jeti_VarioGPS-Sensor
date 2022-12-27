@@ -18,12 +18,13 @@ enum
   P_ENABLE_RX1 =            6,
   P_ENABLE_RX2 =            7,
   P_ENABLE_TEMP =           8,
-  P_VARIO_SMOOTHING =      10,
-  P_VARIO_DEADZONE =       12,
-  P_AIRSPEED_SENSOR =      13,
-  P_TEC_MODE =             14,
-  P_CAPACITY_VALUE =       20,
-  P_VOLTAGE_VALUE =        P_CAPACITY_VALUE+sizeof(float)
+  P_ENABLE_COMPASS =        9,
+  P_VARIO_SMOOTHING =      11,
+  P_VARIO_DEADZONE =       13,
+  P_AIRSPEED_SENSOR =      14,
+  P_TEC_MODE =             15,
+  P_CAPACITY_VALUE =       21,
+  P_VOLTAGE_VALUE =        P_CAPACITY_VALUE+sizeof(float)      
 };
 
 // Sensor IDs
@@ -56,6 +57,8 @@ enum
   ID_SV_SIGNAL_GAP,
   ID_SV_SIGNAL_GAP_MAX,
   ID_SV_SIGNALS_PER_SECOND,
+  ID_COMPASS,
+  ID_REL_COMPASS,
   ID_LAST // not used, but has to be <=32 (see JetiExProtocol.h : MAX_SENSORS)
 };
 
@@ -114,12 +117,16 @@ JETISENSOR_CONST sensors[] PROGMEM =
   #ifdef SUPPORT_MPXV7002_MPXV5004
   { ID_AIRSPEED,    "Air speed",  "km/h",       JetiSensor::TYPE_14b, 0 },
   #endif
-#ifdef SUPPORT_RXQ
+  #ifdef SUPPORT_RXQ
   { ID_SV_SIG_LOSS_CNT, "SigLossCnt", "#",      JetiSensor::TYPE_14b, 0 },
   { ID_SV_SIGNAL_GAP,  "SigGap","ms",           JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNAL_GAP_MAX,  "SigGapMax","ms",    JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNALS_PER_SECOND, "#Sig/Sec","#",   JetiSensor::TYPE_14b, 0 },
-#endif
+  #endif
+  #ifdef SUPPORT_LSM303
+  { ID_COMPASS,     "Compass",     "\xB0",      JetiSensor::TYPE_14b, 1 },
+  { ID_REL_COMPASS, "Rel. Compass","\xB0",      JetiSensor::TYPE_14b, 1 },
+  #endif
   { 0 }
 };
 #endif
@@ -167,10 +174,16 @@ JETISENSOR_CONST sensors[] PROGMEM =
   #ifdef SUPPORT_MPXV7002_MPXV5004
   { ID_AIRSPEED,    "Air speed",  "mph",        JetiSensor::TYPE_14b, 0 },
   #endif
+  #ifdef SUPPORT_RXQ
   { ID_SV_SIG_LOSS_CNT, "SigLossCnt", "#",      JetiSensor::TYPE_14b, 0 },
   { ID_SV_SIGNAL_GAP,  "SigGap","ms",           JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNAL_GAP_MAX,  "SigGapMax","ms",    JetiSensor::TYPE_22b, 0 },
   { ID_SV_SIGNALS_PER_SECOND, "#Sig/s","#",     JetiSensor::TYPE_14b, 0 },
+  #endif
+  #ifdef SUPPORT_LSM303
+  { ID_COMPASS,     "Compass",     "\xB0",      JetiSensor::TYPE_14b, 1 },
+  { ID_REL_COMPASS, "Rel. Compass","\xB0",      JetiSensor::TYPE_14b, 1 },
+  #endif
   { 0 }
 };
 #endif
@@ -269,7 +282,6 @@ enum {
   Rx1_voltage,
   Rx2_voltage
 };
- 
 
 #ifdef ANALOG_R_DIVIDER_20_20
 // max. voltage @5.0V vref             13.6V           51.8V           51.8V           33.4V           36.3V           62.7V           10.0V           10.0V
@@ -426,6 +438,8 @@ const uint8_t mVperAmp[] =  {
 #define DEFAULT_ENABLE_Rx2        false
 
 #define DEFAULT_ENABLE_EXT_TEMP   false
+
+#define DEFAULT_ENABLE_COMPASS    false
 
 #define DEFAULT_AIRSPEED_SENSOR   airSpeed_disabled
 #define DEFAULT_TEC_MODE          TEC_disabled

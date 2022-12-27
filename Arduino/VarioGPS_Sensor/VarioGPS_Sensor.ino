@@ -6,11 +6,12 @@
   Vario, GPS, Strom/Spannung, Empfängerspannungen, Temperaturmessung
 
 */
-#define VARIOGPS_VERSION "Version V2.3.6.6"
+#define VARIOGPS_VERSION "Version V2.4"
 /*
 
   ******************************************************************
   Versionen:
+  V2.4    26.12.22  Kompass GX-511 hinzugefügt
   V2.3.6.6 24.11.22 fix compile error with GPS_LOCATION_PRIO_HIGH
   V2.3.6.5 23.11.22 fix to allow usage GPS device only
   V2.3.6.4 16.11.22 dynamic GPS speed and vario value transmission (V>30m/S GPS Speed prio is increased, vario values are decreased 
@@ -145,7 +146,7 @@
 #endif
 
 #ifdef SUPPORT_EX_BUS
-  #include "JetiExBusProtocol.h"
+  #include <JetiExBusProtocol.h>
   JetiExBusProtocol jetiEx;
 #else
   #include <JetiExSerial.h>
@@ -158,7 +159,7 @@
 #include "defaults.h"
 
 #ifdef SUPPORT_GPS
-  #include <TinyGPS++.h>
+  #include <TinyGPSPlus.h>
   #include <AltSoftSerial.h>
   TinyGPSPlus gps;
   AltSoftSerial gpsSerial;
@@ -177,6 +178,11 @@
 #ifdef SUPPORT_LPS
   #include <LPS.h>
   LPS lps;
+#endif
+
+#ifdef SUPPORT_LSM303
+  #include <LSM303.h>
+  LSM303 compass;
 #endif
 
 struct {
@@ -203,8 +209,11 @@ const float timefactorCapacityConsumption = (1000.0/MEASURING_INTERVAL*60*60)/10
 bool enableRx1 = DEFAULT_ENABLE_Rx1;
 bool enableRx2 = DEFAULT_ENABLE_Rx2;
 bool enableExtTemp = DEFAULT_ENABLE_EXT_TEMP;
+bool compassEnabled = DEFAULT_ENABLE_COMPASS;
 uint8_t TECmode = DEFAULT_TEC_MODE;
 uint8_t airSpeedSensor = DEFAULT_AIRSPEED_SENSOR;
+float compassPos = -1.0;
+bool compassInitalized = false;
 
 unsigned long lastTime = 0;
 // Main drive variables
@@ -245,7 +254,7 @@ void(* resetCPU) (void) = 0;
 
 #include "HandleMenu.h"
 
-#ifdef SUPPORT_RX_VOLTAGE
+
 const float factorVoltageDivider[] = { float(voltageInputR1[0]+voltageInputR2[0])/voltageInputR2[0],
                                        float(voltageInputR1[1]+voltageInputR2[1])/voltageInputR2[1],
                                        float(voltageInputR1[2]+voltageInputR2[2])/voltageInputR2[2],
@@ -254,11 +263,12 @@ const float factorVoltageDivider[] = { float(voltageInputR1[0]+voltageInputR2[0]
                                        float(voltageInputR1[5]+voltageInputR2[5])/voltageInputR2[5],
                                        float(voltageInputR1[6]+voltageInputR2[6])/voltageInputR2[6],
                                        float(voltageInputR1[7]+voltageInputR2[7])/voltageInputR2[7]  };
+
+
 // read mV from voltage sensor
 long readAnalog_mV(uint8_t sensorVolt, uint8_t pin){
   return (analogRead(pin)/1024.0)*V_REF*factorVoltageDivider[sensorVolt];
 }
-#endif
 
 #ifdef SUPPORT_MAIN_DRIVE
 // get voltage sensor type
@@ -445,6 +455,27 @@ void setup()
   }
   #endif
 
+  #ifdef SUPPORT_LSM303
+  if (EEPROM.read(P_ENABLE_COMPASS) != 0xFF) {
+    compassEnabled = EEPROM.read(P_ENABLE_COMPASS);
+    
+    if (compass.init()) {
+      compass.enableDefault();
+      /*
+      Calibration values; the default values of +/-32767 for each axis
+      lead to an assumed magnetometer bias of 0. Use the Calibrate example
+      program to determine appropriate values for your particular unit.
+      */
+      compass.m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
+      compass.m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
+      compassInitalized = true;
+    } else {
+      compassEnabled = false;
+      EEPROM.write(P_ENABLE_COMPASS, compassEnabled);
+    } 
+  }
+  #endif
+
   if (EEPROM.read(P_VARIO_SMOOTHING) != 0xFF) {
     pressureSensor.smoothingValue = (float)EEPROM.read(P_VARIO_SMOOTHING) / 100;
   }
@@ -571,6 +602,14 @@ void setup()
     // when the signal D2 goes high, call the rising function
     attachInterrupt(digitalPinToInterrupt(RXQ_SIGNAL_PIN), sv_rising, RISING);
   #endif
+
+  #ifdef SUPPORT_LSM303
+  if(!compassEnabled){
+    jetiEx.SetSensorActive( ID_COMPASS, false, sensors );
+    jetiEx.SetSensorActive( ID_REL_COMPASS, false, sensors );
+  }
+  #endif
+
   // init Jeti EX Bus
   jetiEx.SetDeviceId( 0x76, 0x32 );
   
@@ -842,6 +881,26 @@ void loop()
     #endif
   }
 
+  #ifdef SUPPORT_LSM303
+    if (compassEnabled && compassInitalized) {
+      compass.read();
+      /*
+      to use the +Z axis as a reference.
+      */
+      float heading = compass.heading();
+      if (compassPos == -1) {
+        // save actual value as home position
+        compassPos = heading;
+      }
+      float relCompass = heading - compassPos;
+      if (relCompass < 0.0) {
+        relCompass = 360.0 + relCompass;
+      }
+      jetiEx.SetSensorValue( ID_COMPASS, compassPos, JEP_PRIO_STANDARD);
+      jetiEx.SetSensorValue( ID_REL_COMPASS, relCompass, JEP_PRIO_STANDARD);
+    }
+  #endif
+
   #ifdef SUPPORT_GPS
   if(gpsSettings.mode != GPS_disabled){
     unsigned long distToHome;
@@ -1037,7 +1096,7 @@ void loop()
 void setFastVariometerValues() {
   if (pressureSensor.type == MS5611_) {
     int variometer = ms5611.getVerticalSpeed();
-    ms5611_osr_t prio = JEP_PRIO_ULTRA_HIGH;
+    uint8_t prio = JEP_PRIO_ULTRA_HIGH;
       #ifdef SUPPORT_GPS
       // dynamic Jeti transfer rate: at high speed higher prio
       double speed = gps.speed.mps();
