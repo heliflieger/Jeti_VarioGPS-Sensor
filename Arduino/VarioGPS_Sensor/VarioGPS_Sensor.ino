@@ -512,10 +512,12 @@ void setup()
   if(pressureSensor.type == unknown){
     jetiEx.SetSensorActive( ID_VARIO, false, sensors );
   }
+  #ifndef SUPPORT_EX_BUS
   if(pressureSensor.type == MS5611_){
     // to speedup the fine grained vario values set the buffer send cycle to a minimum value
     jetiEx.SetJetiSendCycle(JETI_SEND_CYCLE);
   }
+  #endif
 
   #ifdef SUPPORT_BMx280
   if(gpsSettings.mode == GPS_basic || pressureSensor.type != BME280){
@@ -661,9 +663,17 @@ void loop()
       lastAirSpeed = uAirSpeed;
 
       #ifdef UNIT_US
-        jetiEx.SetSensorValue( ID_AIRSPEED, uAirSpeed*2.23694, JEP_PRIO_LOW );    // speed in mph
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_AIRSPEED, uAirSpeed*2.23694);    // speed in mph
+      #else
+        jetiEx.SetSensorValue( ID_AIRSPEED, uAirSpeed*2.23694, JEP_PRIO_LOW);    // speed in mph
+      #endif
+      #else
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_AIRSPEED, uAirSpeed*3.6);        // speed in km/h
       #else
         jetiEx.SetSensorValue( ID_AIRSPEED, uAirSpeed*3.6, JEP_PRIO_LOW);        // speed in km/h
+      #endif
       #endif
     }
     #endif
@@ -704,7 +714,11 @@ void loop()
           curAltitude = boschPressureSensor.readAltitude() * 100; // In Centimeter
           uTemperature = boschPressureSensor.readTemperature(); // In Celsius
           if(pressureSensor.type == BME280){
-            jetiEx.SetSensorValue( ID_HUMIDITY, boschPressureSensor.readHumidity() * 10, JEP_PRIO_ULTRA_LOW); // In %rH
+            #ifdef SUPPORT_EX_BUS
+              jetiEx.SetSensorValue( ID_HUMIDITY, boschPressureSensor.readHumidity() * 10); // In %rH
+            #else
+              jetiEx.SetSensorValue( ID_HUMIDITY, boschPressureSensor.readHumidity() * 10, JEP_PRIO_ULTRA_LOW); // In %rH
+            #endif
           }
           break;
         #endif
@@ -772,27 +786,50 @@ void loop()
         // ft/s = m/s / 0.3048
         // inHG = hPa * 0,029529983071445
         // ft = m / 0.3048
-        jetiEx.SetSensorValue( ID_VARIO, uVario /= 0.3048, JEP_PRIO_STANDARD);                 // ft/s
-        jetiEx.SetSensorValue( ID_PRESSURE, uPressure * 0.029529983071445, JEP_PRIO_ULTRA_LOW );  // inHG
-        jetiEx.SetSensorValue( ID_TEMPERATURE, (uTemperature * 1.8 + 320) * 10, JEP_PRIO_ULTRA_LOW);    // °F
+        #ifdef SUPPORT_EX_BUS
+          jetiEx.SetSensorValue( ID_VARIO, uVario /= 0.3048);                 // ft/s
+          jetiEx.SetSensorValue( ID_PRESSURE, uPressure * 0.029529983071445);  // inHG
+          jetiEx.SetSensorValue( ID_TEMPERATURE, (uTemperature * 1.8 + 320) * 10);    // °F
+        #else
+          jetiEx.SetSensorValue( ID_VARIO, uVario /= 0.3048, JEP_PRIO_STANDARD);                 // ft/s
+          jetiEx.SetSensorValue( ID_PRESSURE, uPressure * 0.029529983071445, JEP_PRIO_ULTRA_LOW );  // inHG
+          jetiEx.SetSensorValue( ID_TEMPERATURE, (uTemperature * 1.8 + 320) * 10, JEP_PRIO_ULTRA_LOW);    // °F
+        #endif
       #else
-        jetiEx.SetSensorValue( ID_VARIO, uVario, JEP_PRIO_STANDARD);
-        jetiEx.SetSensorValue( ID_PRESSURE, uPressure, JEP_PRIO_ULTRA_LOW );
-        jetiEx.SetSensorValue( ID_TEMPERATURE, uTemperature * 10, JEP_PRIO_ULTRA_LOW);
+        #ifdef SUPPORT_EX_BUS
+          jetiEx.SetSensorValue( ID_VARIO, uVario);
+          jetiEx.SetSensorValue( ID_PRESSURE, uPressure);
+          jetiEx.SetSensorValue( ID_TEMPERATURE, uTemperature * 10);
+        #else
+          jetiEx.SetSensorValue( ID_VARIO, uVario, JEP_PRIO_STANDARD);
+          jetiEx.SetSensorValue( ID_PRESSURE, uPressure, JEP_PRIO_ULTRA_LOW );
+          jetiEx.SetSensorValue( ID_TEMPERATURE, uTemperature * 10, JEP_PRIO_ULTRA_LOW);
+        #endif
       #endif
       
     }
     #endif
 
     #ifdef SUPPORT_RXQ
-      // ID_SV_SIG_LOSS_CNT : count of servo signal gap measures > 100ms
-      jetiEx.SetSensorValue( ID_SV_SIG_LOSS_CNT, ourServoSignalLossCount, JEP_PRIO_ULTRA_LOW);
-      // ID_SV_SIGNAL_GAP : time gap in ms between two servo pulses
-      jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP, ourServoSignalGap, JEP_PRIO_STANDARD);
-      // ID_SV_SIGNAL_GAP_MAX : maximum time gap in ms between two servo pulses
-      jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP_MAX, ourServoSignalGapMax, JEP_PRIO_ULTRA_LOW);
-      // number of servo signals / transmitted signals per second
-      jetiEx.SetSensorValue( ID_SV_SIGNALS_PER_SECOND, ourServoSignalsPerSecond, JEP_PRIO_STANDARD);
+      #ifdef SUPPORT_EX_BUS
+        // ID_SV_SIG_LOSS_CNT : count of servo signal gap measures > 100ms
+        jetiEx.SetSensorValue( ID_SV_SIG_LOSS_CNT, ourServoSignalLossCount);
+        // ID_SV_SIGNAL_GAP : time gap in ms between two servo pulses
+        jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP, ourServoSignalGap);
+        // ID_SV_SIGNAL_GAP_MAX : maximum time gap in ms between two servo pulses
+        jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP_MAX, ourServoSignalGapMax);
+        // number of servo signals / transmitted signals per second
+        jetiEx.SetSensorValue( ID_SV_SIGNALS_PER_SECOND, ourServoSignalsPerSecond);
+      #else
+        // ID_SV_SIG_LOSS_CNT : count of servo signal gap measures > 100ms
+        jetiEx.SetSensorValue( ID_SV_SIG_LOSS_CNT, ourServoSignalLossCount, JEP_PRIO_ULTRA_LOW);
+        // ID_SV_SIGNAL_GAP : time gap in ms between two servo pulses
+        jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP, ourServoSignalGap, JEP_PRIO_STANDARD);
+        // ID_SV_SIGNAL_GAP_MAX : maximum time gap in ms between two servo pulses
+        jetiEx.SetSensorValue( ID_SV_SIGNAL_GAP_MAX, ourServoSignalGapMax, JEP_PRIO_ULTRA_LOW);
+        // number of servo signals / transmitted signals per second
+        jetiEx.SetSensorValue( ID_SV_SIGNALS_PER_SECOND, ourServoSignalsPerSecond, JEP_PRIO_STANDARD);
+      #endif
 
     #endif
 
@@ -804,7 +841,11 @@ void loop()
       
       // Voltage calculation
       float cuVolt = readAnalog_mV(getVoltageSensorTyp(),VOLTAGE_PIN)/1000.0;
-      jetiEx.SetSensorValue( ID_VOLTAGE, cuVolt*10, JEP_PRIO_STANDARD);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_VOLTAGE, cuVolt*10);
+      #else
+        jetiEx.SetSensorValue( ID_VOLTAGE, cuVolt*10, JEP_PRIO_STANDARD);
+      #endif
 
       // Current calculation
       uint16_t ampOffset;
@@ -824,12 +865,19 @@ void loop()
       if (currentSensor > APM25_A){
         cuAmp *= 5000.0/V_REF;
       }
-
-      jetiEx.SetSensorValue( ID_CURRENT, cuAmp*10, JEP_PRIO_STANDARD);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_CURRENT, cuAmp*10);
+      #else
+        jetiEx.SetSensorValue( ID_CURRENT, cuAmp*10, JEP_PRIO_STANDARD);
+      #endif
 
       // Capacity consumption calculation
       capacityConsumption += cuAmp/timefactorCapacityConsumption;
-      jetiEx.SetSensorValue( ID_CAPACITY, capacityConsumption, JEP_PRIO_ULTRA_LOW);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_CAPACITY, capacityConsumption);
+      #else
+        jetiEx.SetSensorValue( ID_CAPACITY, capacityConsumption, JEP_PRIO_ULTRA_LOW);
+      #endif
 
       // save capacity and voltage to eeprom
       if(capacityMode > startup && (millis() - lastTimeCapacity) > CAPACITY_SAVE_INTERVAL){
@@ -841,17 +889,29 @@ void loop()
       }
 
       // Power calculation
-      jetiEx.SetSensorValue( ID_POWER, cuAmp*cuVolt, JEP_PRIO_ULTRA_LOW);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_POWER, cuAmp*cuVolt);
+      #else
+        jetiEx.SetSensorValue( ID_POWER, cuAmp*cuVolt, JEP_PRIO_ULTRA_LOW);
+      #endif
     }
     #endif
 
     #ifdef SUPPORT_RX_VOLTAGE
     if(enableRx1){
-      jetiEx.SetSensorValue( ID_RX1_VOLTAGE, readAnalog_mV(Rx1_voltage,RX1_VOLTAGE_PIN)/10, JEP_PRIO_LOW);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_RX1_VOLTAGE, readAnalog_mV(Rx1_voltage,RX1_VOLTAGE_PIN)/10);
+      #else
+        jetiEx.SetSensorValue( ID_RX1_VOLTAGE, readAnalog_mV(Rx1_voltage,RX1_VOLTAGE_PIN)/10, JEP_PRIO_LOW);
+      #endif
     }
 
     if(enableRx2){
-      jetiEx.SetSensorValue( ID_RX2_VOLTAGE, readAnalog_mV(Rx2_voltage,RX2_VOLTAGE_PIN)/10, JEP_PRIO_LOW);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_RX2_VOLTAGE, readAnalog_mV(Rx2_voltage,RX2_VOLTAGE_PIN)/10);
+      #else
+        jetiEx.SetSensorValue( ID_RX2_VOLTAGE, readAnalog_mV(Rx2_voltage,RX2_VOLTAGE_PIN)/10, JEP_PRIO_LOW);
+      #endif
     }
     #endif
 
@@ -875,8 +935,11 @@ void loop()
         // EU to US conversions
         steinhart = steinhart * 1.8 + 320;
       #endif
-
-      jetiEx.SetSensorValue( ID_EXT_TEMP, steinhart*10, JEP_PRIO_ULTRA_LOW);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_EXT_TEMP, steinhart*10);
+      #else
+        jetiEx.SetSensorValue( ID_EXT_TEMP, steinhart*10, JEP_PRIO_ULTRA_LOW);
+      #endif
     }
     #endif
   }
@@ -896,8 +959,13 @@ void loop()
       if (relCompass < 0.0) {
         relCompass = 360.0 + relCompass;
       }
-      jetiEx.SetSensorValue( ID_COMPASS, compassPos, JEP_PRIO_STANDARD);
-      jetiEx.SetSensorValue( ID_REL_COMPASS, relCompass, JEP_PRIO_STANDARD);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_COMPASS, compassPos);
+        jetiEx.SetSensorValue( ID_REL_COMPASS, relCompass);
+      #else
+        jetiEx.SetSensorValue( ID_COMPASS, compassPos, JEP_PRIO_STANDARD);
+        jetiEx.SetSensorValue( ID_REL_COMPASS, relCompass, JEP_PRIO_STANDARD);
+      #endif
     }
   #endif
 
@@ -1062,8 +1130,13 @@ void loop()
   #endif
 
   #ifndef NO_ALTITUDE_VALUES
-  jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude, JEP_PRIO_STANDARD);
-  jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude, JEP_PRIO_ULTRA_LOW);
+    #ifdef SUPPORT_EX_BUS
+      jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude);
+      jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude);
+    #else
+      jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude, JEP_PRIO_STANDARD);
+      jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude, JEP_PRIO_ULTRA_LOW);
+    #endif
   #endif
   
   #ifdef SUPPORT_MS5611
@@ -1096,22 +1169,32 @@ void loop()
 void setFastVariometerValues() {
   if (pressureSensor.type == MS5611_) {
     int variometer = ms5611.getVerticalSpeed();
-    uint8_t prio = JEP_PRIO_ULTRA_HIGH;
-      #ifdef SUPPORT_GPS
-      // dynamic Jeti transfer rate: at high speed higher prio
-      double speed = gps.speed.mps();
-      if (speed > 30.0 ) {
-         prio = JEP_PRIO_STANDARD;
-      }
-      #endif
+    #ifndef SUPPORT_EX_BUS
+      uint8_t prio = JEP_PRIO_ULTRA_HIGH;
+        #ifdef SUPPORT_GPS
+        // dynamic Jeti transfer rate: at high speed higher prio
+        double speed = gps.speed.mps();
+        if (speed > 30.0 ) {
+          prio = JEP_PRIO_STANDARD;
+        }
+        #endif
+    #endif
     #ifdef UNIT_US
       // EU to US conversions
       // ft/s = m/s / 0.3048
       // inHG = hPa * 0,029529983071445
       // ft = m / 0.3048
-      jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048, prio); // ft/s
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048); // ft/s
+      #else
+        jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048, prio); // ft/s
+      #endif
     #else
-      jetiEx.SetSensorValue( ID_VARIO, variometer, prio);
+      #ifdef SUPPORT_EX_BUS
+        jetiEx.SetSensorValue( ID_VARIO, variometer);
+      #else
+        jetiEx.SetSensorValue( ID_VARIO, variometer, prio);
+      #endif
     #endif
   }
 }

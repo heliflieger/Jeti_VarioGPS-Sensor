@@ -6,7 +6,7 @@ Universeller Jeti Telemetrie Sensor mit vielen Möglichkeiten: Vario(TEK), GPS, 
 
 ## neue Features
 Version 2.4
-* Unterstützung eines GY-511 (LSM303) Kompass-Modules. Angezeigt wird dr absolute und der relative Wert, seit dem Start.
+* Unterstützung eines GY-511 (LSM303) Kompass-Modules. Angezeigt wird der absolute und der relative Wert, seit dem Start.
 
 Version 2.3.6
 * da trotz der deutlich verbesserten MS5611 Variometer Werte in der Version V2.3.5, die Übertragung zum Sender deutlich verzögert war, ergab eine Problem-Analyse eine deutliche Überlastung der mit 9600Baud arbeitenden JetiExSensor-Schnittstelle, bei gleichzeitiger Nutzung von RXQ, GPS und Vario, da die JetiExSensor-Library alle Werte gleichwertig überträgt. Die große Anzahl an Sensor-Werten (z.B. eines GPS Moduls (im Modus Extended) ) ergab eine Variometer-Wert-Übertragung von ca. 1 Wert/s. 
@@ -125,6 +125,7 @@ Folgende Einstellungen können per Jetibox vorgenommen werden:
     - MANUAL(Wert muss manuell per Jetibox zurückgesetzt werden mit RESET OFFSET)
 - Rx1, Rx2 Empfängerspannungsmessung aktivieren
 - Temperaturmessung aktivieren
+- Kompass aktivieren
 
 ## Hardware
 
@@ -137,6 +138,7 @@ Folgende Einstellungen können per Jetibox vorgenommen werden:
     - APM2.5 PowerModul @5V: 90A/50V (@3.3V: 58A/33.4V)
     - ACS758_50B, ACS758_100B, ACS758_150B, ACS758_200B, ACS758_50U, ACS758_100U, ACS758_150U, ACS758_200U
 - zusätzliche Stromsensoren @5V Betriebsspannung: ACS712_05, ACS712_20, ACS712_30
+- Kompass: GY-511/LSM303
 
 ## Aufbau
 
