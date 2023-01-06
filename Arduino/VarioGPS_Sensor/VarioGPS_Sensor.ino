@@ -11,7 +11,7 @@
 
   ******************************************************************
   Versionen:
-  V2.4    26.12.22  Kompass GX-511 hinzugefügt
+  V2.4     26.12.22 Kompass GX-511 hinzugefügt, Trainingswerte und Luftdruck auf Meereshöhe einstellbar
   V2.3.6.6 24.11.22 fix compile error with GPS_LOCATION_PRIO_HIGH
   V2.3.6.5 23.11.22 fix to allow usage GPS device only
   V2.3.6.4 16.11.22 dynamic GPS speed and vario value transmission (V>30m/S GPS Speed prio is increased, vario values are decreased 
@@ -194,6 +194,7 @@ struct {
   uint8_t type = unknown;
   float smoothingValue;
   uint8_t deadzone;
+  long seaLevelPressure;
 } pressureSensor;
 
 // set defaults
@@ -209,7 +210,10 @@ const float timefactorCapacityConsumption = (1000.0/MEASURING_INTERVAL*60*60)/10
 bool enableRx1 = DEFAULT_ENABLE_Rx1;
 bool enableRx2 = DEFAULT_ENABLE_Rx2;
 bool enableExtTemp = DEFAULT_ENABLE_EXT_TEMP;
+#ifdef SUPPORT_LSM303
 bool compassEnabled = DEFAULT_ENABLE_COMPASS;
+bool trainingMode = DEFAULT_ENABLE_TRAINING_MODE;
+#endif
 uint8_t TECmode = DEFAULT_TEC_MODE;
 uint8_t airSpeedSensor = DEFAULT_AIRSPEED_SENSOR;
 float compassPos = -1.0;
@@ -221,6 +225,7 @@ unsigned long lastTime = 0;
 // pressure sensor variables
 long startAltitude = 0;
 long uRelAltitude = 0;
+long uTrainingAltitude = 0;
 long uAbsAltitude = 0;
 long uPressure = PRESSURE_SEALEVEL;
 float uTemperature = 20;
@@ -410,6 +415,7 @@ void setup()
     case MS5611_ :
       pressureSensor.smoothingValue = MS5611_SMOOTHING;
       pressureSensor.deadzone = MS5611_DEADZONE;
+      pressureSensor.seaLevelPressure = MS5611_SEALEVELPRESSURE;
       break;
     case LPS_ :
       pressureSensor.smoothingValue = LPS_SMOOTHING;
@@ -458,6 +464,7 @@ void setup()
   #ifdef SUPPORT_LSM303
   if (EEPROM.read(P_ENABLE_COMPASS) != 0xFF) {
     compassEnabled = EEPROM.read(P_ENABLE_COMPASS);
+    trainingMode = EEPROM.read(P_ENABLE_TRAINING);
     
     if (compass.init()) {
       compass.enableDefault();
@@ -466,8 +473,8 @@ void setup()
       lead to an assumed magnetometer bias of 0. Use the Calibrate example
       program to determine appropriate values for your particular unit.
       */
-      compass.m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
-      compass.m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
+      compass.m_min = DEFAULT_COMPAS_MIN;
+      compass.m_max = DEFAULT_COMPAS_MAX;
       compassInitalized = true;
     } else {
       compassEnabled = false;
@@ -481,6 +488,12 @@ void setup()
   }
   if (EEPROM.read(P_VARIO_DEADZONE) != 0xFF) {
     pressureSensor.deadzone = EEPROM.read(P_VARIO_DEADZONE);
+  }
+  if (EEPROM.read(P_VARIO_SEALEVELPRESSURE) != 0xFF) {
+    pressureSensor.seaLevelPressure = ((long)EEPROM.read(P_VARIO_SEALEVELPRESSURE) << 24) +
+         ((long)EEPROM.read(P_VARIO_SEALEVELPRESSURE + 1) << 16) +
+         ((long)EEPROM.read(P_VARIO_SEALEVELPRESSURE + 2) << 8) +
+         (long)EEPROM.read(P_VARIO_SEALEVELPRESSURE + 3);
   }
 
   #ifdef SUPPORT_MPXV7002_MPXV5004
@@ -540,6 +553,7 @@ void setup()
   if(gpsSettings.mode == GPS_disabled && pressureSensor.type == unknown){
     jetiEx.SetSensorActive( ID_ALTREL, false, sensors );
     jetiEx.SetSensorActive( ID_ALTABS, false, sensors );
+    jetiEx.SetSensorActive( ID_TRAINING_ALTIT, false, sensors );
   }
 
   #ifdef SUPPORT_GPS_EXTENDED
@@ -609,6 +623,10 @@ void setup()
   if(!compassEnabled){
     jetiEx.SetSensorActive( ID_COMPASS, false, sensors );
     jetiEx.SetSensorActive( ID_REL_COMPASS, false, sensors );
+  }
+  if (!trainingMode) {
+    jetiEx.SetSensorActive( ID_TRAINING_ORIENTATION, false, sensors );
+    jetiEx.SetSensorActive( ID_TRAINING_ALTIT, false, sensors );
   }
   #endif
 
@@ -695,10 +713,17 @@ void loop()
           uTemperature = ms5611.getTemperature();
           uPressure = ms5611.getSmoothedPressure();
           if(gpsSettings.mode == GPS_disabled){
-            uAbsAltitude = ms5611.calcAltitude(uPressure);
+            uAbsAltitude = ms5611.calcAltitude(uPressure, pressureSensor.seaLevelPressure);
           }
           uRelAltitude = ms5611.calcRelAltitude(uPressure)* 10; // we want rel. altitude in decimeter;
           uVario = ms5611.getVerticalSpeed();
+
+          // Training values. 2m / 4,5m / 7m
+          if (uRelAltitude == 20 || uRelAltitude == 45 || uRelAltitude == 70) {
+            uTrainingAltitude = 1;
+          } else {
+            uTrainingAltitude = 0;
+          }
           break;
         #endif
         #ifdef SUPPORT_LPS
@@ -960,12 +985,25 @@ void loop()
         relCompass = 360.0 + relCompass;
       }
       #ifdef SUPPORT_EX_BUS
-        jetiEx.SetSensorValue( ID_COMPASS, compassPos);
+        jetiEx.SetSensorValue( ID_COMPASS, heading * 10);
         jetiEx.SetSensorValue( ID_REL_COMPASS, relCompass);
       #else
-        jetiEx.SetSensorValue( ID_COMPASS, compassPos, JEP_PRIO_STANDARD);
+        jetiEx.SetSensorValue( ID_COMPASS, heading * 10, JEP_PRIO_STANDARD);
         jetiEx.SetSensorValue( ID_REL_COMPASS, relCompass, JEP_PRIO_STANDARD);
       #endif
+      if (trainingMode) {
+        int orientation = ((int) relCompass) % 90;
+        if (orientation > 0) {
+          orientation = 0;
+        } else {
+          orientation = 1;
+        }
+        #ifdef SUPPORT_EX_BUS
+          jetiEx.SetSensorValue( ID_TRAINING_ORIENTATION, orientation);
+        #else
+          jetiEx.SetSensorValue( ID_TRAINING_ORIENTATION, orientation, JEP_PRIO_ULTRA_HIGH);
+        #endif
+      }
     }
   #endif
 
@@ -1088,6 +1126,7 @@ void loop()
       jetiEx.SetSensorValueGPS( ID_GPSLON, true, 0, JEP_PRIO_LOW );
       if(pressureSensor.type == unknown){
         uRelAltitude = 0;
+        uTrainingAltitude = 0;
       }
       uAbsAltitude = 0;
       distToHome = 0;
@@ -1124,6 +1163,7 @@ void loop()
       // ft = m / 0.3048
       uRelAltitude /= 0.3048;
       uAbsAltitude /= 0.3048;
+      uTrainingAltitude /= 0.3048;
     #endif
 
   }
@@ -1133,9 +1173,11 @@ void loop()
     #ifdef SUPPORT_EX_BUS
       jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude);
       jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude);
+      jetiEx.SetSensorValue( ID_TRAINING_ALTIT, uTrainingAltitude);
     #else
       jetiEx.SetSensorValue( ID_ALTREL, uRelAltitude, JEP_PRIO_STANDARD);
       jetiEx.SetSensorValue( ID_ALTABS, uAbsAltitude, JEP_PRIO_ULTRA_LOW);
+      jetiEx.SetSensorValue( ID_TRAINING_ALTIT, uTrainingAltitude, JEP_PRIO_ULTRA_HIGH);
     #endif
   #endif
   
@@ -1178,23 +1220,18 @@ void setFastVariometerValues() {
           prio = JEP_PRIO_STANDARD;
         }
         #endif
-    #endif
+    #endif    
     #ifdef UNIT_US
       // EU to US conversions
       // ft/s = m/s / 0.3048
       // inHG = hPa * 0,029529983071445
       // ft = m / 0.3048
-      #ifdef SUPPORT_EX_BUS
-        jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048); // ft/s
-      #else
-        jetiEx.SetSensorValue( ID_VARIO, variometer /= 0.3048, prio); // ft/s
-      #endif
+      variometer = variometer /= 0.3048
+    #endif
+    #ifdef SUPPORT_EX_BUS
+      jetiEx.SetSensorValue( ID_VARIO, variometer); // m/S
     #else
-      #ifdef SUPPORT_EX_BUS
-        jetiEx.SetSensorValue( ID_VARIO, variometer);
-      #else
-        jetiEx.SetSensorValue( ID_VARIO, variometer, prio);
-      #endif
+      jetiEx.SetSensorValue( ID_VARIO, variometer, prio); // m/S
     #endif
   }
 }

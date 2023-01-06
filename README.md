@@ -6,28 +6,37 @@ Universeller Jeti Telemetrie Sensor mit vielen Möglichkeiten: Vario(TEK), GPS, 
 
 ## neue Features
 Version 2.4
-* Unterstützung eines GY-511 (LSM303) Kompass-Modules. Angezeigt wird der absolute und der relative Wert, seit dem Start.
+* Unterstützung eines GY-511 (LSM303) Kompass-Modules. Angezeigt wird der absolute und der relative Wert (seit dem Start).
+* Trainingsmodus mit GY-511: Hilfreich z.B. beim F3C-Schweben. 
+  * Es werden die Werte "Training Altit" und "Training Comp." übertragen. \
+    "Training Altit" Wert 1 oder 0. Der Wert ist 1, wenn das Modell auf einer Höhe von 2m, 4.5m oder 7m ist. \
+    "Training Comp." Wert 1 0der 0. Der Wert ist 1, wenn das Modell Relativ zum Startpunkt auf 0°/90°/180°/270° ausgerichtet ist. \
+    ![VarioGPS-SensorV2.4](/Doc/img/JGV_2.4_02.png) \
+    Die Trainingswerte können anschließend als Alarme verwendet werden. \
+    ![VarioGPS-SensorV2.4](/Doc/img/JGV_2.4_01.png)
+* Einstellung des "Sea Level Pressure" via JetiBox für ein MS5611 Modul. Hierdurch kann die absolute Höhe kalibriert werden.
+    
 
 Version 2.3.6
 * da trotz der deutlich verbesserten MS5611 Variometer Werte in der Version V2.3.5, die Übertragung zum Sender deutlich verzögert war, ergab eine Problem-Analyse eine deutliche Überlastung der mit 9600Baud arbeitenden JetiExSensor-Schnittstelle, bei gleichzeitiger Nutzung von RXQ, GPS und Vario, da die JetiExSensor-Library alle Werte gleichwertig überträgt. Die große Anzahl an Sensor-Werten (z.B. eines GPS Moduls (im Modus Extended) ) ergab eine Variometer-Wert-Übertragung von ca. 1 Wert/s. 
 * Lösung: Priorisierbare Sensor-Wert Schnittstelle
-  * Durch die Erweiterung der Bibliothek JetiExSensor (aktueller Code im Zip-File (oder unter https://github.com/Pulsar07/JetiExSensor ), um eine priorisierbare Sensor-Wert-übertragung und die Vergrößerung der Sendefrequenz, konnten mehr als 20 Telemetrie-Werte mehr oder weniger häufig, je nach Wichtigkeit, übertragen werden und gleichzeitig noch  6-10 Variometer-Werte/s, abhängig von Anzahl anderer Telemetriewerte.
+  * Durch die Erweiterung der Bibliothek JetiExSensor (aktueller Code im Zip-File (oder unter [/VarioMS5611](/JetiExSensor)), um eine priorisierbare Sensor-Wert-übertragung und die Vergrößerung der Sendefrequenz, konnten mehr als 20 Telemetrie-Werte mehr oder weniger häufig, je nach Wichtigkeit, übertragen werden und gleichzeitig noch  6-10 Variometer-Werte/s, abhängig von Anzahl anderer Telemetriewerte.
   * Ein kleiner Nachteil ist, dass Werte die selten übertragen werden (z.B. Luftdruck, nur jeden 15.Frame) im Display des Jeti-Senders manchmal blinkend dargestellt werden, da die Werte nicht schnell genug (für den Sender) aktualisiert werden. Im Code ist es jedoch sehr leich die Priorität eines Sensor-Wertes nach den eigenen Bedürfnissen anzupassen.
 * aufgrund des grenzwertigen Heap-Speicherverbrauchs, wurden viele Code-Bereiche nun mit bedingter Compilierung versehen, ohne jedoch die Sensor-IDs zu ändern. D.h. egal welche #defines gesetzt werden, die IDs und damit die Interpretation auf dem Sender wird dabei nicht geändert.
 * Vergleich zwischen den VarioGPS-Sensor V2.3.4, V2.3.5 und V2.3.6 geloggten Variowerten, jeweils zu einem parallel aktivierten JETI-REX-Assist-Vario:
     * Vergleich mit originalem VarioGPS-Sensor V2.3.4 eines MS5611 Sensors (ohne VarioMS5611 Lib und ohne verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
-    * ![VarioGPS-SensorV2.3.4](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.4_0.88_1.1VSps.png)
+    * ![VarioGPS-SensorV2.3.4](/Doc/img/JGV_2.3.4_0.88_1.1VSps.png)
     * Vergleich mit VarioGPS-Sensor V2.3.5 eines MS5611 Sensors (mit neuer VarioMS5611 Lib aber ohne verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
-    * ![VarioGPS-SensorV2.3.5](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.5_0.96_1.3VSps.png)
+    * ![VarioGPS-SensorV2.3.5](/Doc/img/JGV_2.3.5_0.96_1.3VSps.png)
     * Vergleich mit VarioGPS-Sensor V2.3.6 eines MS5611 Sensors (mit neuer VarioMS5611 Lib und mit verbesserter Telemetrieübertragung) mit einem JETI-REX-Assist-Vario:
-    * ![VarioGPS-SensorV2.3.6](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/JGV_2.3.6_0.96_6.5VSps.png)
+    * ![VarioGPS-SensorV2.3.6](/Doc/img/JGV_2.3.6_0.96_6.5VSps.png)
 
 
 Version 2.3.5
 * Neue VarioMS5611 Library für geringeres Rauschen und deutlich besseres Signal-Rausch-Verhältnis
-    * Library : VarioMS5611 unter https://github.com/Pulsar07/VarioMS5611 verfügbar initial auch in der VarioGPS_Libraries.zip enthalten
+    * Library : VarioMS5611 unter [/VarioMS5611](/VarioMS5611) verfügbar initial auch in der VarioGPS_Libraries.zip enthalten
     * deutliche Verbesserung des Signal-Rausch-Verhältnisses und ca. um Faktor 3 verbessertes Signalrauschen
-    * ![VarioMS5611-Signalvergleich](https://raw.githubusercontent.com/Pulsar07/Jeti_VarioGPS-Sensor/master/Doc/img/VergleichVarioSignal.png)
+    * ![VarioMS5611-Signalvergleich](/Doc/img/VergleichVarioSignal.png)
     * erreicht wird diese Verbesserung durch deutliche Steigerung der Oversampling-Rate von ca. 5 x 4096 auf 40 x 4096 Samples bei gleichzeitig verkleinertem/minimiertem Laufzeitimpakt durch Vermeidung von jeglichem delay() bei der Kommunikation mit dem MS5611 (kooperatives run() in der main loop()). Damit kann das Signalrauschen deutlich besser gedämpft werden ohne die Reaktionszeit und die Empfindlichkeit zu verschlechtern.
     * weitere Verbesserungen sind mit noch besserer HW / Software kaum noch zu erwarten, da das barometrische Hintergrundrauschen im Bereich von 1Pa bei 0,2Hz liegt (https://de.wikipedia.org/wiki/Luftdruck#Hintergrundrauschen), was ca. 10cm Rauschen innerhalb von 5 Sekunden entspricht.
     * Das Feature wird weiterhin mittels #define SUPPORT_MS5611 aktiviert und ersetzt die bisherige MS5611 Implementierung
@@ -51,6 +60,12 @@ Nur mit Barometersensor werden folgende Werte angezeigt:
 - Luftdruck
 - Temperatur
 - Luftfeuchte (nur mit BME280)
+- Training Altit (nur mit MS5611)
+
+Nur mit Kompass Modul LSM303:
+- Kompass
+- Rel. Kompass (seit Start/Reset)
+- Training Comp.
   
 Im GPS Basic Mode sind folgende Werte verfügbar:
 - Position
@@ -115,8 +130,7 @@ Die Erfahrung der letzten 2 Jahre, ca. 15 Modellen, Abstand zum Modell bis 1500m
 Folgende Einstellungen können per Jetibox vorgenommen werden:
 - GPS: deaktiviert, Basic oder Extended
 - GPS Distanz: 2D oder 3D
-- Vario Filterparameter: Empfindlichkeit und Totzone
-- Air Speed Sensor
+- Vario Filterparameter: Empfindlichkeit, Totzone und Luftdruck auf Meereshöhe (MS5611)
 - TEK Kompensation
 - Stromsensor für Hauptantrieb 
 - Einstellung Reset der Kapazität:

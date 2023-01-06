@@ -14,6 +14,7 @@ enum screenViews {
   setDistanceMode,
   #endif
   detectedPressureSensor,
+  setSeaLevelPressure,
   setVarioSmoothingValue,
   setDeadzone,
   #ifdef SUPPORT_MPXV7002_MPXV5004
@@ -36,12 +37,15 @@ enum screenViews {
   #ifdef SUPPORT_LSM303
   enableCompass,
   #endif
+  #if defined(SUPPORT_LSM303) || defined(SUPPORT_MS5611)
+  enableTrainingMode,
+  #endif
   saveSettings,
   defaultSettings
 };
 
 
-const char menuText[][17] PROGMEM=
+const char menuText[][18] PROGMEM=
 {
   {"VarioGPS Sensor"},
   {"Reset offset"},
@@ -50,6 +54,7 @@ const char menuText[][17] PROGMEM=
   {"GPS distance:"},
   #endif
   {"Pressure sensor:"},
+  {"SeaLevel Press.:"},
   {"Vario smoothing:"},
   {"Vario deadzone:"},
   #ifdef SUPPORT_MPXV7002_MPXV5004
@@ -70,7 +75,11 @@ const char menuText[][17] PROGMEM=
   {"Ext. Temp:"},
   #endif
   #ifdef SUPPORT_LSM303
-  {"Compass"},
+  {"Compass:"},
+  
+  #endif
+  #if defined(SUPPORT_LSM303) || defined(SUPPORT_MS5611)
+    {"Training Mode:"},
   #endif
   {"Save and restart"},
   {"Load defaults"}
@@ -217,6 +226,11 @@ void HandleMenu()
           pressureSensor.deadzone++;
         }
         break;
+      case setSeaLevelPressure:
+        if (pressureSensor.seaLevelPressure < 121325) {
+          pressureSensor.seaLevelPressure = pressureSensor.seaLevelPressure + 100;
+        }
+        break;
       #ifdef SUPPORT_MPXV7002_MPXV5004
       case setAirSpeedSensor:
         if(airSpeedSensor > airSpeed_disabled){
@@ -284,6 +298,11 @@ void HandleMenu()
           pressureSensor.deadzone--;
         }
         break;
+      case setSeaLevelPressure:
+        if (pressureSensor.seaLevelPressure > 100) {
+          pressureSensor.seaLevelPressure = pressureSensor.seaLevelPressure - 100;
+        }
+        break;
       #ifdef SUPPORT_MPXV7002_MPXV5004
       case setAirSpeedSensor:
         if(airSpeedSensor < MPXV7002_MPXV5004){
@@ -327,6 +346,9 @@ void HandleMenu()
       case enableCompass:
         compassEnabled = !compassEnabled;
         break;
+      case enableTrainingMode:
+        trainingMode = !trainingMode;
+        break;
       #endif
       case saveSettings:
         #ifdef SUPPORT_GPS
@@ -350,10 +372,19 @@ void HandleMenu()
 
         #ifdef SUPPORT_LSM303
         EEPROM.write(P_ENABLE_COMPASS, compassEnabled);
+        if (!compassEnabled) {
+          trainingMode = DEFAULT_ENABLE_TRAINING_MODE;
+        }
+        EEPROM.write(P_ENABLE_TRAINING, trainingMode);
         #endif
 
         EEPROM.write(P_VARIO_SMOOTHING,int(pressureSensor.smoothingValue*100));
         EEPROM.write(P_VARIO_DEADZONE,pressureSensor.deadzone);
+
+        EEPROM.write(P_VARIO_SEALEVELPRESSURE, (pressureSensor.seaLevelPressure >> 24) & 0xFF);
+        EEPROM.write(P_VARIO_SEALEVELPRESSURE + 1,(pressureSensor.seaLevelPressure >> 16) & 0xFF);
+        EEPROM.write(P_VARIO_SEALEVELPRESSURE + 2,(pressureSensor.seaLevelPressure >> 8) & 0xFF);
+        EEPROM.write(P_VARIO_SEALEVELPRESSURE + 3,(pressureSensor.seaLevelPressure) & 0xFF);
 
         #ifdef SUPPORT_MPXV7002_MPXV5004
         EEPROM.write(P_AIRSPEED_SENSOR,airSpeedSensor);
@@ -409,6 +440,11 @@ void HandleMenu()
       if(pressureSensor.type == unknown)goto startHandleMenu;
       sprintf( _bufferLine2, " %2dcm",pressureSensor.deadzone);
       break;
+    case setSeaLevelPressure:
+      if(pressureSensor.type == unknown)goto startHandleMenu;
+      sprintf( _bufferLine2, " %d",(long)pressureSensor.seaLevelPressure / 100);
+      //sprintf( _bufferLine2, "%s%02d hPa",_bufferLine2, (long)pressureSensor.seaLevelPressure % 100);
+      break;
     #ifdef SUPPORT_MPXV7002_MPXV5004
     case setAirSpeedSensor:
       memcpy_P( _bufferLine2, &enableText[airSpeedSensor], 16 );
@@ -444,6 +480,10 @@ void HandleMenu()
     #ifdef SUPPORT_LSM303
     case enableCompass:
       memcpy_P( _bufferLine2, &enableText[compassEnabled], 16 );
+      break;
+    case enableTrainingMode:
+      if(!compassEnabled)goto startHandleMenu;
+      memcpy_P( _bufferLine2, &enableText[trainingMode], 16 );
       break;
     #endif
   }

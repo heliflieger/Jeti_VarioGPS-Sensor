@@ -19,11 +19,13 @@ enum
   P_ENABLE_RX2 =            7,
   P_ENABLE_TEMP =           8,
   P_ENABLE_COMPASS =        9,
-  P_VARIO_SMOOTHING =      11,
-  P_VARIO_DEADZONE =       13,
-  P_AIRSPEED_SENSOR =      14,
-  P_TEC_MODE =             15,
-  P_CAPACITY_VALUE =       21,
+  P_ENABLE_TRAINING =      10,
+  P_VARIO_SMOOTHING =      12,
+  P_VARIO_DEADZONE =       14,
+  P_VARIO_SEALEVELPRESSURE =       15, // 4 Bytes
+  P_AIRSPEED_SENSOR =      19,
+  P_TEC_MODE =             20,
+  P_CAPACITY_VALUE =       26,
   P_VOLTAGE_VALUE =        P_CAPACITY_VALUE+sizeof(float)      
 };
 
@@ -57,8 +59,12 @@ enum
   ID_SV_SIGNAL_GAP,
   ID_SV_SIGNAL_GAP_MAX,
   ID_SV_SIGNALS_PER_SECOND,
+  #ifdef SUPPORT_LSM303
   ID_COMPASS,
   ID_REL_COMPASS,
+  ID_TRAINING_ORIENTATION,
+  ID_TRAINING_ALTIT,
+  #endif
   ID_LAST // not used, but has to be <=32 (see JetiExProtocol.h : MAX_SENSORS)
 };
 
@@ -125,7 +131,11 @@ JETISENSOR_CONST sensors[] PROGMEM =
   #endif
   #ifdef SUPPORT_LSM303
   { ID_COMPASS,     "Compass",     "\xB0",      JetiSensor::TYPE_14b, 1 },
-  { ID_REL_COMPASS, "Rel. Compass","\xB0",      JetiSensor::TYPE_14b, 1 },
+  { ID_REL_COMPASS, "Rel. Compass","\xB0",      JetiSensor::TYPE_14b, 0 },
+  { ID_TRAINING_ORIENTATION, "Training Comp."," ", JetiSensor::TYPE_14b, 0 },
+  #endif
+  #ifdef SUPPORT_MS5611
+  { ID_TRAINING_ALTIT, "Training Altit"," ",       JetiSensor::TYPE_14b, 0 },
   #endif
   { 0 }
 };
@@ -182,7 +192,11 @@ JETISENSOR_CONST sensors[] PROGMEM =
   #endif
   #ifdef SUPPORT_LSM303
   { ID_COMPASS,     "Compass",     "\xB0",      JetiSensor::TYPE_14b, 1 },
-  { ID_REL_COMPASS, "Rel. Compass","\xB0",      JetiSensor::TYPE_14b, 1 },
+  { ID_REL_COMPASS, "Rel. Compass","\xB0",      JetiSensor::TYPE_14b, 0 },
+  { ID_TRAINING_ORIENTATION, "Training Comp."," ", JetiSensor::TYPE_14b, 0 },
+  #endif
+  #ifdef SUPPORT_MS5611
+  { ID_TRAINING_ALTIT, "Training Altit"," ",       JetiSensor::TYPE_14b, 0 },
   #endif
   { 0 }
 };
@@ -214,6 +228,10 @@ enum {
 // MS5611
 #define MS5611_SMOOTHING 0.80
 #define MS5611_DEADZONE 3
+/**
+* aSeaLevelPressure reference pressure in Pa the altitude has to be related to
+*/
+#define MS5611_SEALEVELPRESSURE 101325
 
 // LPS (LPS311)
 #define LPS_SMOOTHING 0.80
@@ -440,8 +458,19 @@ const uint8_t mVperAmp[] =  {
 #define DEFAULT_ENABLE_EXT_TEMP   false
 
 #define DEFAULT_ENABLE_COMPASS    false
+#define DEFAULT_ENABLE_TRAINING_MODE  false
 
 #define DEFAULT_AIRSPEED_SENSOR   airSpeed_disabled
 #define DEFAULT_TEC_MODE          TEC_disabled
+
+
+
+/*
+Calibration values; the default values of +/-32767 for each axis
+lead to an assumed magnetometer bias of 0. Use the Calibrate example
+program to determine appropriate values for your particular unit.
+*/
+#define DEFAULT_COMPAS_MIN (LSM303::vector<int16_t>){-731, -711, -256};
+#define DEFAULT_COMPAS_MAX (LSM303::vector<int16_t>){+430, +576, +256};
 
 
