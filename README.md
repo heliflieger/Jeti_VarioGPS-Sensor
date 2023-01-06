@@ -125,7 +125,7 @@ Die Erfahrung der letzten 2 Jahre, ca. 15 Modellen, Abstand zum Modell bis 1500m
   
 ## JetiBox Einstellungen
 
-![JetiBox](https://raw.githubusercontent.com/nightflyer88/Jeti_VarioGPS-Sensor/master/Doc/img/JetiBox_settings.png)
+![JetiBox](/Doc/img/JetiBox_settings.png)
 
 Folgende Einstellungen können per Jetibox vorgenommen werden:
 - GPS: deaktiviert, Basic oder Extended
@@ -158,7 +158,7 @@ Folgende Einstellungen können per Jetibox vorgenommen werden:
 
 Der VarioGPS Sensor kann individuell nach seinen eigenen Wünschen zusammengestellt werden. Es ist möglich den Sensor als reines Vario zu betreiben, nur zur Vermessung des Antriebs, oder als Überwachung der Empfängerstromversorgung. Die benötigten Sensoren werden einfach am Arduino angelötet, und per Jetibox aktiviert.
 
-![schematic](https://raw.githubusercontent.com/nightflyer88/Jeti_VarioGPS-Sensor/master/Doc/img/VarioGPS_schematic.png)
+![schematic](/Doc/img/VarioGPS_schematic.png)
 
 Zu beachten gibt es folgendes: 
 - Die Barometer Sensoren sind empfindlich gegen Licht und sollten deshalb in schwarzem Schrumpfschlauch eingepackt werden
@@ -166,7 +166,7 @@ Zu beachten gibt es folgendes:
 
 ## Firmware laden
 
-Je nach verwendetem Arduino Board wird die [Firmware](https://github.com/nightflyer88/Jeti_VarioGPS-Sensor/releases) für 3.3V oder 5V benötigt. Im Ordner Arduino/Firmware sind die entsprechenden hex-files die direkt auf das Arduino Board geladen werden können. Für fortgeschrittene Benutzer steht auch der komplette Code zur Verfügung, der mit der Arduino IDE auf seine eigene Bedürfnisse angepasst werden kann.
+Je nach verwendetem Arduino Board wird die [Firmware](/releases) für 3.3V oder 5V benötigt. Im Ordner Arduino/Firmware sind die entsprechenden hex-files die direkt auf das Arduino Board geladen werden können. Für fortgeschrittene Benutzer steht auch der komplette Code zur Verfügung, der mit der Arduino IDE auf seine eigene Bedürfnisse angepasst werden kann.
 
 Für den Firmware upload wird ein USB<>serial Adapter benötigt, und ein entsprechendes Upload-Programm. Danach hat man's schon geschaft, und kann den Sensor im Modell einbauen.
 
@@ -174,12 +174,12 @@ Treten nach einem Firmwareupdate Probleme auf, sollten per JetiBox mit "Load def
 
 ### MAC
 
-Für MAC User gibt es das Programm [HexUploader](https://github.com/nightflyer88/HexUploader/releases), dies ist ein simples Programm zum laden der Firmware. Einfach das Arduino Board per USB anschliessen, Arduino Type "Pro mini" und den USB-Serial Port auswählen. Nun das entsprechende hex-file auswählen und der upload startet automatisch.
+Für MAC User gibt es das Programm [HexUploader](/releases), dies ist ein simples Programm zum laden der Firmware. Einfach das Arduino Board per USB anschliessen, Arduino Type "Pro mini" und den USB-Serial Port auswählen. Nun das entsprechende hex-file auswählen und der upload startet automatisch.
 
-![hexuploader2](https://raw.githubusercontent.com/nightflyer88/Jeti_VarioGPS-Sensor/master/Doc/img/HexUploader.png)
+![hexuploader2](/Doc/img/HexUploader.png)
 
 ### Windows
 
 Für Windows User kann der [XLoader](http://russemotto.com/xloader/XLoader.zip) verwendet werden. Ist ebenfalls ein simples Programm, einfach das hex-file, device und COM-port auswählen und auf "Upload" drücken.
 
-![xloader](https://raw.githubusercontent.com/nightflyer88/Jeti_VarioGPS-Sensor/master/Doc/img/xloader.png)
+![xloader](/Doc/img/xloader.png)

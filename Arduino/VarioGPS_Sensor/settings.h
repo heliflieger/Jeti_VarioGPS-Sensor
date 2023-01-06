@@ -27,7 +27,7 @@
 
 #define SUPPORT_LSM303                        // compass modul GY-511 / LSM303
 
-//#define SUPPORT_GPS                           // GPS modul
+#define SUPPORT_GPS                           // GPS modul
 //#define SUPPORT_GPS_EXTENDED                    // additional low prio sensor values
 //#define SUPPORT_MPXV7002_MPXV5004             // MPXV7002 or MPXV5004 pressure sensor for airspeed
 //#define SUPPORT_TEC                           // Vario TEC compensation
